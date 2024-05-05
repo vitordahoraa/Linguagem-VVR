@@ -100,6 +100,7 @@ public class ReferencePointer {
             System.out.println(referencia.toString());
             count++;
         }
+
     }
 
     public static boolean existeVariavelIgual(ArrayList<ReferencePointer> lista, ReferencePointer referenciaAIncluir){
@@ -110,6 +111,14 @@ public class ReferencePointer {
             }
         }
         return false;
+    }
+
+    public static ReferencePointer procurarReferencia(TemporaryReference referenciaInput, int Scope, boolean isFunction, ArrayList<ReferencePointer> referencias) {
+        for(ReferencePointer referencia : referencias){
+            if(referencia.getNome().equals(referenciaInput.getNome()) && referencia.isVector() == referenciaInput.isVector() && referencia.getEscopo() == Scope && referencia.isFunction() == isFunction)
+                return referencia;
+        }
+        return null;
     }
 
     @Override

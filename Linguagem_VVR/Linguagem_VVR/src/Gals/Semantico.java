@@ -3,6 +3,7 @@ package Gals;
 import Gals.SemanticUtils.ReferencePointer;
 import Gals.SemanticUtils.ReferenceType;
 import Gals.SemanticUtils.ReferenceValueType;
+import Gals.SemanticUtils.TemporaryReference;
 
 import java.util.ArrayList;
 import java.util.Stack;
@@ -15,12 +16,12 @@ public class Semantico implements Constants
     private int currentParamPosition = 0;
     private String currentName = null;
     ArrayList<ReferencePointer> references = new ArrayList<>();
-    ArrayList<String> tempIdentifiers = new ArrayList<>();
+    ArrayList<TemporaryReference> tempIdentifiers = new ArrayList<>();
 
     ArrayList<ReferencePointer> currentReferences = new ArrayList<>();
+    TemporaryReference currentReference = null;
     private ReferenceValueType currentVarType;
     private ReferenceType currentRefType;
-    boolean isVector = false;
 
     public ArrayList<ReferencePointer> getReferences(){
         return references;
@@ -62,7 +63,8 @@ public class Semantico implements Constants
             }
             case 2:
                 currentName = token.getLexeme();
-                tempIdentifiers.add(currentName);
+                currentReference = new TemporaryReference(currentName,false);
+                tempIdentifiers.add(currentReference);
                 System.out.println("Salvando nome "+ currentName + "");
                 //Verificando o tipo de refência a ser salvo na lista
                 break;
@@ -105,7 +107,7 @@ public class Semantico implements Constants
                 currentReferences = new ArrayList<>();
                 currentRefType = null;
                 currentVarType = null;
-                isVector = false;
+                currentReference = null;
                 currentParamPosition = 0;
                 tempIdentifiers = new ArrayList<>();
                 break;
@@ -150,48 +152,68 @@ public class Semantico implements Constants
                 break;
             }
             case 11:{
-                isVector = true;
+                System.out.println("Referência é vetor");
+                currentReference.setVector(true);
                 break;
             }
 
             case 13: {
 
                 System.out.println("Adiciona a função pra lista");
-                ReferencePointer reference = new ReferencePointer(currentName, currentVarType, false, false, stackScope.peek(), false, 0, isVector, false, true);
+                ReferencePointer reference = new ReferencePointer(currentReference.getNome(), currentVarType, false, false, stackScope.peek(), false, 0, currentReference.isVector(), false, true);
                 references.add(reference);
                 System.out.println("Imprime Lista de referência");
-                isVector = false;
                 //ReferencePointer.PrintListaDeReferencia(references);
                 break;
             }
             case 14: {
                 System.out.println("Adiciona o param pra lista");
-                references.add(new ReferencePointer(currentName,currentVarType,true,false,stackScope.peek(),true,currentParamPosition,isVector,false,false));
+                references.add(new ReferencePointer(currentReference.getNome(),currentVarType,true,false,stackScope.peek(),true,currentParamPosition,currentReference.isVector(),false,false));
                 currentName = null;
                 System.out.println("Imprime Lista de referência");
-                isVector = false;
                 //ReferencePointer.PrintListaDeReferência(references);
                 break;
             }
 
             case 15: {
-                System.out.println("Adiciona a(s) var(s) pra lista");
-
-                ReferencePointer reference = new ReferencePointer(currentName, currentVarType, false, false, stackScope.peek(), false, 0, isVector, false, false);
-
-                boolean existeVar = ReferencePointer.existeVariavelIgual(references,reference);
-
-                if(existeVar){
-                    throw new SemanticError("Tentativa de adicionar a var "+currentName+" em um escopo em que já está declarada");
+                System.out.println("Procurando referência na tabela");
+                ReferencePointer referenciaEncontrada = ReferencePointer.procurarReferencia(currentReference,lastScope,false,references);
+                if(referenciaEncontrada == null){
+                    throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
                 }
-                references.add(reference);
-                currentReferences.add(reference);
-                isVector = false;
-
-                System.out.println("Imprime Lista de referência");
+                referenciaEncontrada.setUtilizada(true);
                 //ReferencePointer.PrintListaDeReferencia(references);
                 break;
             }
+
+            case 16:{
+
+                System.out.println("Utilizar todas as referencias em memória");
+                for(ReferencePointer reference : currentReferences){
+                    System.out.println("Utilizando a referência "+ reference.getNome());
+                    reference.setIniciada(true);
+
+                }
+                break;
+            }
+
+            case 17: {
+                System.out.println("Adicionando todos os identificadores na tabela de referência");
+                for(TemporaryReference identifier : tempIdentifiers) {
+                    ReferencePointer reference = new ReferencePointer(identifier.getNome(), currentVarType, false, false, stackScope.peek(), false, 0, identifier.isVector(), false, false);
+
+                    boolean existeVar = ReferencePointer.existeVariavelIgual(references, reference);
+
+                    if (existeVar) {
+                        throw new SemanticError("Tentativa de adicionar a var " + identifier.getNome() + " em um escopo em que já está declarada");
+                    }
+                    references.add(reference);
+                    currentReferences.add(reference);
+                }
+
+                break;
+            }
+
 
             default:
                 System.out.println("Acao #"+action+", Token: "+token);
