@@ -4,10 +4,13 @@ package IDE;
 import Gals.LexicalError;
 import Gals.Lexico;
 import Gals.SemanticError;
+import Gals.SemanticUtils.ReferencePointer;
 import Gals.Semantico;
 import Gals.Sintatico;
 import Gals.SyntaticError;
 
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.io.StringReader;
 
 /**
@@ -37,6 +40,7 @@ public class Main extends javax.swing.JFrame {
         jScrollPane2 = new javax.swing.JScrollPane();
         console = new javax.swing.JTextArea();
         buttonCompile = new javax.swing.JButton();
+        buttonTable = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("IDE do Professor");
@@ -63,6 +67,13 @@ public class Main extends javax.swing.JFrame {
             }
         });
 
+        buttonTable.setFont(new java.awt.Font("Helvetica Neue", 0, 14));;
+        buttonTable.setText("Gerar tabela");
+        buttonTable.addActionListener(new java.awt.event.ActionListener(){
+        public void actionPerformed(java.awt.event.ActionEvent evt) {
+            buttonTableActionPerformed(evt);}
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -74,7 +85,8 @@ public class Main extends javax.swing.JFrame {
                                         .addComponent(jScrollPane2)
                                         .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                                 .addGap(0, 0, Short.MAX_VALUE)
-                                                .addComponent(buttonCompile))
+                                                .addComponent(buttonCompile)
+                                                .addComponent(buttonTable))
                                 )
                                 .addContainerGap())
         );
@@ -86,11 +98,16 @@ public class Main extends javax.swing.JFrame {
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(3, 3, 3)
-                                .addComponent(buttonCompile))
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(buttonCompile)
+                                        .addComponent(buttonTable))
+                        )
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private static boolean isSuccess = false;
 
     private void buttonCompileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonCompileActionPerformed
 
@@ -106,11 +123,54 @@ public class Main extends javax.swing.JFrame {
         try {
             sint.parse(lex, sem);
             console.setText("Compilado com sucesso!");
+            isSuccess = true;
         } catch (LexicalError | SyntaticError | SemanticError ex) {
             console.setText("Problema na compilação: "+ex.getLocalizedMessage());
+            isSuccess = false;
         }
 
     }//GEN-LAST:event_buttonCompileActionPerformed
+
+    private void buttonTableActionPerformed(java.awt.event.ActionEvent evt){
+        if (isSuccess){
+            JFrame tableWindow = new JFrame("Tabela");
+            tableWindow.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            tableWindow.add(new JLabel("Nova tela"));
+            tableWindow.setSize(500, 500);
+            tableWindow.setLocationRelativeTo(null);
+            tableWindow.setVisible(true);
+            DefaultTableModel tableModel = new DefaultTableModel();
+            tableModel.addColumn("Nome");
+            tableModel.addColumn("Tipo");
+            tableModel.addColumn("Iniciada");
+            tableModel.addColumn("Utilizada");
+            tableModel.addColumn("Escopo");
+            tableModel.addColumn("É Parâmetro");
+            tableModel.addColumn("Posição Parâmetro");
+            tableModel.addColumn("É Vetor");
+            tableModel.addColumn("É Referência");
+            tableModel.addColumn("É Função");
+
+            for (ReferencePointer pointer : listaDeReferencias) {
+                tableModel.addRow(new Object[]{
+                        pointer.getNome(),
+                        pointer.getTipo(),
+                        pointer.isIniciada(),
+                        pointer.isUtilizada(),
+                        pointer.getEscopo(),
+                        pointer.isParameter(),
+                        pointer.getPosicaoParameto(),
+                        pointer.isVector(),
+                        pointer.isReference(),
+                        pointer.isFunction()
+                });
+            }
+
+        }
+        else {
+            console.setText("É necessário compilar o código antes de gerar a tabela.");
+        }
+    }
 
     /**
      * @param args the command line arguments
@@ -153,5 +213,6 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextArea sourceInput;
+    private javax.swing.JButton buttonTable;
     // End of variables declaration//GEN-END:variables
 }
