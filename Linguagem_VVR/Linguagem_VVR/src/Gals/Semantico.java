@@ -21,6 +21,10 @@ public class Semantico implements Constants
     private ReferenceValueType currentVarType;
     private ReferenceType currentRefType;
     boolean isVector = false;
+
+    public ArrayList<ReferencePointer> getReferences(){
+        return references;
+    }
     public void executeAction(int action, Token token)	throws SemanticError
     {
         // Verificar se stack de scopo está vazia. Se estiver, colocar o escopo 0, global
