@@ -1,19 +1,16 @@
 package Gals.SemanticUtils;
 
 public enum ReferenceType {
-    INT(1),
-    DOUBLE(2),
 
-    STRING(3),
-    CHAR(4),
-    BOOL(5);
+    VAR(1),
+    PARAMETRO(2),
+    FUNCAO(3);
 
-    private final int varCode;
-    private ReferenceType(int varCode) {
-        this.varCode = varCode;
+    private final int refType;
+    private ReferenceType(int refType) {
+        this.refType = refType;
     }
     public int getVarCode(){
-        return varCode;
+        return refType;
     }
-
 }

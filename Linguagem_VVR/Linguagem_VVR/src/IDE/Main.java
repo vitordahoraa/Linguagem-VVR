@@ -8,6 +8,8 @@ import Gals.Semantico;
 import Gals.Sintatico;
 import Gals.SyntaticError;
 
+import java.io.StringReader;
+
 /**
  *
  * @author eas
@@ -97,7 +99,9 @@ public class Main extends javax.swing.JFrame {
         Semantico sem = new Semantico();
 
 
-        lex.setInput(sourceInput.getText());
+        StringReader reader = new StringReader(sourceInput.getText());
+
+        lex.setInput(reader);
 
         try {
             sint.parse(lex, sem);
