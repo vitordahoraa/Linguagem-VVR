@@ -7,7 +7,7 @@ ParserName = Sintatico
 SemanticName = Semantico
 ScannerCaseSensitive = true
 ScannerTable = Compact
-Input = String
+Input = Stream
 Parser = SLR
 #RegularDefinitions
 D: [a-zA-Z_][a-zA-Z0-9_]*
@@ -291,7 +291,7 @@ DEL_VIRGULA : ,
 
 //<DECLARACAO> ::= <INT>  | <STRING>  | <CHAR> | <BOOL> | <DOUBLE> | <ATRIB> ;
  
-<DECLARACAO> ::= <DECLARACAO_TIPO> <MULT_ID> <OP_ATRIB> <EXP> | <MULT_ID> <EXP> | <DECLARACAO_TIPO> <MULT_ID>;
+<DECLARACAO> ::= <DECLARACAO_TIPO> <MULT_ID> <OP_ATRIB> <EXP> | <MULT_ID> <OP_ATRIB> <EXP> | <DECLARACAO_TIPO> <MULT_ID>;
 
 <DECLARACAO_TIPO> ::= KW_INT | KW_DOUBLE | KW_STRING | KW_CHAR | KW_BOOL;
  
