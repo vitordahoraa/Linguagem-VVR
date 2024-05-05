@@ -1,6 +1,9 @@
 package Gals.SemanticUtils;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.Stack;
 
 public class ReferencePointer {
     String nome;
@@ -90,7 +93,7 @@ public class ReferencePointer {
                 "É Função?: "+this.isFunction;
     }
 
-    public static void PrintListaDeReferência(ArrayList<ReferencePointer> lista){
+    public static void PrintListaDeReferencia(ArrayList<ReferencePointer> lista){
         int count = 0;
         for(ReferencePointer referencia : lista){
             System.out.println("Item "+ count + "\n\n");
@@ -99,13 +102,26 @@ public class ReferencePointer {
         }
     }
 
-    public static ReferencePointer ProcuraVariavel(ArrayList<ReferencePointer> lista, String Nome, int Escopo){
+    public static boolean existeVariavelIgual(ArrayList<ReferencePointer> lista, ReferencePointer referenciaAIncluir){
 
         for(ReferencePointer referencia : lista){
-            if(referencia.getEscopo() == Escopo && referencia.getNome().equals(Nome)){
-                return referencia;
+            if(referencia.equals(referenciaAIncluir)){
+                return true;
             }
         }
-        return null;
+        return false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ReferencePointer that = (ReferencePointer) o;
+        return escopo == that.escopo && isVector == that.isVector && isFunction == that.isFunction && Objects.equals(nome, that.nome) && tipo == that.tipo;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(nome, tipo, escopo, isVector, isFunction);
     }
 }
