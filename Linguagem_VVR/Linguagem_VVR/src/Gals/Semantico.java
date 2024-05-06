@@ -109,6 +109,8 @@ public class Semantico implements Constants
                 currentReference = null;
                 currentParamPosition = 0;
                 tempIdentifiers = new ArrayList<>();
+                stackType = new Stack<>();
+                stackOperator =  new Stack<>();
                 break;
 
             case 6:
@@ -147,6 +149,7 @@ public class Semantico implements Constants
                 }
                 System.out.println("Tipo " + currentVarType.toString() + " armazenado");
                 currentRefType = ReferenceType.VAR;
+                currentRefAtribType = currentVarType;
                 System.out.println("Referência a ser salva: " + currentRefType.toString());
                 break;
             }
@@ -208,6 +211,7 @@ public class Semantico implements Constants
                     throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
                 }
                 referenciaEncontrada.setUtilizada(true);
+                stackType.push(referenciaEncontrada.getTipo().getVarCode());
                 //ReferencePointer.PrintListaDeReferencia(references);
                 break;
             }
@@ -247,22 +251,54 @@ public class Semantico implements Constants
                 int resultadoAtrib = SemanticTable.atribType(currentRefAtribType.getVarCode(),resultadoExp);
 
                 if(resultadoAtrib == ReturnType.ERR.getCode()){
-                    throw new SemanticError ("Atribuição da váriavel "+ currentReference.getNome() + " incorreta");
+                    throw new SemanticError ("Atribuição com a referência "+ currentReference.getNome() + " incorreta");
                 }
                 System.out.println("Atribuição da var "+currentReference.getNome() +" válida");
 
+                break;
+            }
+            case 23:{
+                stackOperator.push(OperatorType.BIT.getCode());
+                break;
+            }
+            case 25:{
+                stackOperator.push(OperatorType.REL.getCode());
+                break;
+            }
+            case 26:{
+                stackOperator.push(OperatorType.BIW.getCode());
                 break;
             }
             case 27:{
                 stackOperator.push(OperatorType.SUM.getCode());
                 break;
             }
+            case 28:{
+                stackOperator.push(OperatorType.MUL.getCode());
+                break;
+            }
             case 31:{
                 stackType.push(ReferenceValueType.INT.getVarCode());
                 break;
             }
+            case 33:{
+                stackType.push(ReferenceValueType.BOOL.getVarCode());
+                break;
+            }
+            case 34:{
+                stackType.push(ReferenceValueType.STRING.getVarCode());
+                break;
+            }
             case 35:{
                 stackType.push(ReferenceValueType.CHAR.getVarCode());
+                break;
+            }
+            case 39:{
+                stackOperator.push(OperatorType.DIV.getCode());
+                break;
+            }
+            case 40:{
+                stackOperator.push(OperatorType.MOD.getCode());
                 break;
             }
             case 48:{
@@ -295,6 +331,7 @@ public class Semantico implements Constants
                     throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
                 }
                 referenciaEncontrada.setUtilizada(true);
+                stackType.push(referenciaEncontrada.getTipo().getVarCode());
                 //ReferencePointer.PrintListaDeReferencia(references);
                 break;
             }
