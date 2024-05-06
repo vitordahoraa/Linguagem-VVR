@@ -246,7 +246,7 @@ public class Semantico implements Constants
                 int resultadoAtrib = SemanticTable.atribType(currentRefAtribType.getVarCode(),resultadoExp);
 
                 if(resultadoAtrib == ReturnType.ERR.getCode()){
-                    throw new SemanticError ("Atribuição da váriavel "+ currentReference.getNome());
+                    throw new SemanticError ("Atribuição da váriavel "+ currentReference.getNome() + "incorreta");
                 }
                 System.out.println("Atribuição da var "+currentReference.getNome() +" válida");
 
