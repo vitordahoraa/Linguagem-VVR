@@ -98,6 +98,16 @@ public class Semantico implements Constants
                 lastScope++;
                 System.out.println("Incrementando scopo para "+String.valueOf(lastScope));
                 stackScope.push(lastScope);
+                currentName = null;
+                currentReferences = new ArrayList<>();
+                currentRefType = null;
+                currentVarType = null;
+                currentReference = null;
+                currentParamPosition = 0;
+                tempIdentifiers = new ArrayList<>();
+                stackType = new Stack<>();
+                stackOperator =  new Stack<>();
+
                 break;
 
             case 5, 7, 12:
@@ -189,7 +199,7 @@ public class Semantico implements Constants
             }
             case 14: {
                 System.out.println("Adiciona o param pra lista");
-                references.add(new ReferencePointer(currentReference.getNome(),currentVarType,true,false,stackScope.peek() + 1,true,currentParamPosition,currentReference.isVector(),false,false));
+                references.add(new ReferencePointer(currentReference.getNome(),currentVarType,true,false,lastScope + 1,true,currentParamPosition,currentReference.isVector(),false,false));
                 currentName = null;
                 System.out.println("Imprime Lista de referência");
                 //ReferencePointer.PrintListaDeReferência(references);
@@ -249,6 +259,7 @@ public class Semantico implements Constants
                 int resultadoExp = stackType.pop();
 
                 int resultadoAtrib = SemanticTable.atribType(currentRefAtribType.getVarCode(),resultadoExp);
+                //System.out.println("Resultado EXP : " + resultadoExp + "\n CurrentRefAtribType: "+ currentRefAtribType.getVarCode() + "\n Resultado: " + resultadoAtrib);
 
                 if(resultadoAtrib == ReturnType.ERR.getCode()){
                     throw new SemanticError ("Atribuição com a referência "+ currentReference.getNome() + " incorreta");
@@ -298,6 +309,10 @@ public class Semantico implements Constants
             }
             case 31:{
                 stackType.push(ReferenceValueType.INT.getVarCode());
+                break;
+            }
+            case 32:{
+                stackType.push(ReferenceValueType.DOUBLE.getVarCode());
                 break;
             }
             case 33:{

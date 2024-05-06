@@ -1,7 +1,7 @@
 package Gals.SemanticUtils;
 
 public enum ReturnType {
-    ERR(1),
+    ERR(-1),
     OK_(0),
     WAR(1);
 
