@@ -12,6 +12,7 @@ import Gals.SyntaticError;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.io.StringReader;
+import java.util.ArrayList;
 
 /**
  *
@@ -22,6 +23,7 @@ public class Main extends javax.swing.JFrame {
     /**
      * Creates new form MainWindow
      */
+    private ArrayList<ReferencePointer> references = new ArrayList<>();
     public Main() {
         initComponents();
     }
@@ -108,6 +110,7 @@ public class Main extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private static boolean isSuccess = false;
+    private JFrame tableWindow;
 
     private void buttonCompileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonCompileActionPerformed
 
@@ -124,6 +127,7 @@ public class Main extends javax.swing.JFrame {
             sint.parse(lex, sem);
             console.setText("Compilado com sucesso!");
             isSuccess = true;
+            references = sem.getReferences();
         } catch (LexicalError | SyntaticError | SemanticError ex) {
             console.setText("Problema na compilação: "+ex.getLocalizedMessage());
             isSuccess = false;
@@ -132,40 +136,65 @@ public class Main extends javax.swing.JFrame {
     }//GEN-LAST:event_buttonCompileActionPerformed
 
     private void buttonTableActionPerformed(java.awt.event.ActionEvent evt){
-        if (isSuccess){
-            JFrame tableWindow = new JFrame("Tabela");
-            tableWindow.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            tableWindow.add(new JLabel("Nova tela"));
-            tableWindow.setSize(500, 500);
-            tableWindow.setLocationRelativeTo(null);
-            tableWindow.setVisible(true);
-            DefaultTableModel tableModel = new DefaultTableModel();
-            tableModel.addColumn("Nome");
-            tableModel.addColumn("Tipo");
-            tableModel.addColumn("Iniciada");
-            tableModel.addColumn("Utilizada");
-            tableModel.addColumn("Escopo");
-            tableModel.addColumn("É Parâmetro");
-            tableModel.addColumn("Posição Parâmetro");
-            tableModel.addColumn("É Vetor");
-            tableModel.addColumn("É Referência");
-            tableModel.addColumn("É Função");
+        if (isSuccess) {
+            ArrayList<ReferencePointer> references = this.references; // Obtenha a lista de referências
+            if (tableWindow != null && tableWindow.isVisible()) {
+                // Atualize os dados da tabela existente
+                JTable existingTable = (JTable) ((JScrollPane) tableWindow.getContentPane().getComponent(0)).getViewport().getComponent(0);
+                DefaultTableModel tableModel = (DefaultTableModel) existingTable.getModel();
+                tableModel.setRowCount(0); // Limpe os dados existentes
+                for (ReferencePointer pointer : references) {
+                    tableModel.addRow(new Object[]{
+                            pointer.getNome(),
+                            pointer.getTipo(),
+                            pointer.isIniciada(),
+                            pointer.isUtilizada(),
+                            pointer.getEscopo(),
+                            pointer.isParameter(),
+                            pointer.getPosicaoParameto(),
+                            pointer.isVector(),
+                            pointer.isReference(),
+                            pointer.isFunction()
+                    });
+                }
+            } else {
+                // Crie uma nova tabela
+                DefaultTableModel tableModel = new DefaultTableModel();
+                tableModel.addColumn("Nome");
+                tableModel.addColumn("Tipo");
+                tableModel.addColumn("Iniciada");
+                tableModel.addColumn("Utilizada");
+                tableModel.addColumn("Escopo");
+                tableModel.addColumn("É Parâmetro");
+                tableModel.addColumn("Posição Parâmetro");
+                tableModel.addColumn("É Vetor");
+                tableModel.addColumn("É Referência");
+                tableModel.addColumn("É Função");
 
-            for (ReferencePointer pointer : listaDeReferencias) {
-                tableModel.addRow(new Object[]{
-                        pointer.getNome(),
-                        pointer.getTipo(),
-                        pointer.isIniciada(),
-                        pointer.isUtilizada(),
-                        pointer.getEscopo(),
-                        pointer.isParameter(),
-                        pointer.getPosicaoParameto(),
-                        pointer.isVector(),
-                        pointer.isReference(),
-                        pointer.isFunction()
-                });
+                for (ReferencePointer pointer : references) {
+                    tableModel.addRow(new Object[]{
+                            pointer.getNome(),
+                            pointer.getTipo(),
+                            pointer.isIniciada(),
+                            pointer.isUtilizada(),
+                            pointer.getEscopo(),
+                            pointer.isParameter(),
+                            pointer.getPosicaoParameto(),
+                            pointer.isVector(),
+                            pointer.isReference(),
+                            pointer.isFunction()
+                    });
+                }
+
+                JTable table = new JTable(tableModel);
+                JScrollPane scrollPane = new JScrollPane(table);
+                tableWindow = new JFrame("Tabela");
+                tableWindow.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                tableWindow.add(scrollPane);
+                tableWindow.setSize(500, 500);
+                tableWindow.setLocationRelativeTo(null);
+                tableWindow.setVisible(true);
             }
-
         }
         else {
             console.setText("É necessário compilar o código antes de gerar a tabela.");
