@@ -10,6 +10,7 @@ public class Semantico implements Constants
 {
     private Stack<Integer> stackScope = new Stack<>();
     private Stack<Integer> stackType = new Stack<>();
+    private Stack<Integer> stackOperator = new Stack<>();
     private ReferenceValueType currentRefAtribType = null;
     private int lastScope = 0;
     private int currentParamPosition = 0;
@@ -246,10 +247,14 @@ public class Semantico implements Constants
                 int resultadoAtrib = SemanticTable.atribType(currentRefAtribType.getVarCode(),resultadoExp);
 
                 if(resultadoAtrib == ReturnType.ERR.getCode()){
-                    throw new SemanticError ("Atribuição da váriavel "+ currentReference.getNome() + "incorreta");
+                    throw new SemanticError ("Atribuição da váriavel "+ currentReference.getNome() + " incorreta");
                 }
                 System.out.println("Atribuição da var "+currentReference.getNome() +" válida");
 
+                break;
+            }
+            case 27:{
+                stackOperator.push(OperatorType.SUM.getCode());
                 break;
             }
             case 31:{
@@ -260,6 +265,40 @@ public class Semantico implements Constants
                 stackType.push(ReferenceValueType.CHAR.getVarCode());
                 break;
             }
+            case 48:{
+                System.out.println("Somando valores na stack");
+                int tipo2 = stackType.pop();
+                int tipo1 = stackType.pop();
+                int op = stackOperator.pop();
+
+                int resultadoEXP = SemanticTable.resultType(tipo1,tipo2,op);
+                if(resultadoEXP == ReturnType.ERR.getCode()){
+                    throw new SemanticError("Retorno da expresão inválida");
+                }
+                System.out.println(resultadoEXP);
+                stackType.push(resultadoEXP);
+                break;
+
+            }
+            case 53:{
+                System.out.println("Procurando referência na tabela");
+                Stack<Integer> stackTemp = (Stack<Integer>) stackScope.clone();
+                //System.out.println("Iterando escopo " + stackScope.peek());
+                ReferencePointer referenciaEncontrada = null;
+                while (!stackTemp.empty() && referenciaEncontrada == null){
+                    int scope = stackTemp.peek();
+                    System.out.println("Iterando escopo " + lastScope);
+                    referenciaEncontrada = ReferencePointer.procurarReferencia(currentReference,scope,true,references);
+                    stackTemp.pop();
+                }
+                if(referenciaEncontrada == null){
+                    throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
+                }
+                referenciaEncontrada.setUtilizada(true);
+                //ReferencePointer.PrintListaDeReferencia(references);
+                break;
+            }
+
 
 
             default:
