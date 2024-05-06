@@ -125,9 +125,22 @@ public class Main extends javax.swing.JFrame {
 
         try {
             sint.parse(lex, sem);
-            console.setText("Compilado com sucesso!");
+            String retorno = "Compilado com sucesso!\n";
             isSuccess = true;
             references = sem.getReferences();
+            for(ReferencePointer pointer : references){
+                String nome = pointer.getNome();
+                boolean iniciada = pointer.isIniciada();
+                boolean utilizada = pointer.isUtilizada();
+                if(!iniciada && !utilizada){
+                    retorno += "Aviso: variável "+nome+" foi declarada mas não utilizada\n";
+                }
+                else if(!iniciada && utilizada){
+                    retorno += "Aviso: variável "+nome+" foi usada sem ser declarada. Lixo de memória.\n";
+                }
+            }
+            console.setText(retorno);
+
         } catch (LexicalError | SyntaticError | SemanticError ex) {
             console.setText("Problema na compilação: "+ex.getLocalizedMessage());
             isSuccess = false;
