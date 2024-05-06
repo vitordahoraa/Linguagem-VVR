@@ -6,7 +6,9 @@ public enum OperatorType {
     SUB(1),
     MUL(2),
     DIV(3),
-    REL(4); // qualquer operador relacional
+    REL(4),
+    LOG(5),
+    BIT(6); // qualquer operador relacional
 
     private final int OPcode;
     private OperatorType(int code){
