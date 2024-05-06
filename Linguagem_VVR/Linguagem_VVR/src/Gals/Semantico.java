@@ -259,7 +259,7 @@ public class Semantico implements Constants
                 int resultadoExp = stackType.pop();
 
                 int resultadoAtrib = SemanticTable.atribType(currentRefAtribType.getVarCode(),resultadoExp);
-                //System.out.println("Resultado EXP : " + resultadoExp + "\n CurrentRefAtribType: "+ currentRefAtribType.getVarCode() + "\n Resultado: " + resultadoAtrib);
+                //  System.out.println("Resultado EXP : " + resultadoExp + "\n CurrentRefAtribType: "+ currentRefAtribType.getVarCode() + "\n Resultado: " + resultadoAtrib);
 
                 if(resultadoAtrib == ReturnType.ERR.getCode()){
                     throw new SemanticError ("Atribuição com a referência "+ currentReference.getNome() + " incorreta");
