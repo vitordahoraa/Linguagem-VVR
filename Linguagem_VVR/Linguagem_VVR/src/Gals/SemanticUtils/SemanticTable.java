@@ -1,42 +1,27 @@
 package Gals.SemanticUtils;
 
 public class SemanticTable {
-    public static final int ERR = -1;
-    public static final int OK_ = 0;
-    public static final int WAR = 1;
 
-
-    public static final int INT = 0;
-    public static final int FLO = 1;
-    public static final int CHA = 2;
-    public static final int STR = 3;
-    public static final int BOO = 4;
-
-    public static final int SUM = 0;
-    public static final int SUB = 1;
-    public static final int MUL = 2;
-    public static final int DIV = 3;
-    public static final int REL = 4; // qualquer operador relacional
 
     // TIPO DE RETORNO DAS EXPRESSOES ENTRE TIPOS
     // 5 x 5 X 5  = TIPO X TIPO X OPER
     static int expTable [][][] =
             {/*       INT       */ /*       FLOAT     */ /*      CHAR       */ /*      STRING     */ /*     BOOL        */
-                    /*   INT*/ {{INT,INT,INT,FLO,BOO},{FLO,FLO,FLO,FLO,BOO},{ERR,ERR,ERR,ERR,ERR},{ERR,ERR,ERR,ERR,ERR},{ERR,ERR,ERR,ERR,ERR}},
-                    /* FLOAT*/ {{},{},{},{},{}},
-                    /*  CHAR*/ {{},{},{},{},{}},
-                    /*STRING*/ {{},{},{},{},{}},
-                    /*  BOOL*/ {{},{},{},{},{}}
+                    /*   INT*/ {{ReferenceValueType.INT.getVarCode(),ReferenceValueType.INT.getVarCode(),ReferenceValueType.INT.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.BOOL.getVarCode()},{ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.BOOL.getVarCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()}},
+                    /* FLOAT*/ {{ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.BOOL.getVarCode()},{ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.DOUBLE.getVarCode(),ReferenceValueType.BOOL.getVarCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()}},
+                    /*  CHAR*/ {{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()}},
+                    /*STRING*/ {{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReferenceValueType.STRING.getVarCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReferenceValueType.BOOL.getVarCode()},{ReferenceValueType.STRING.getVarCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReferenceValueType.BOOL.getVarCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()}},
+                    /*  BOOL*/ {{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},{ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReferenceValueType.BOOL.getVarCode()}}
             };
 
     // atribuicoes compativeis
     // 5 x 5 = TIPO X TIPO
     static int atribTable [][]={/* INT FLO CHA STR BOO  */
-            /*INT*/ {OK_,WAR,ERR,ERR,ERR},
-            /*FLO*/ {},
-            /*CHA*/ {},
-            /*STR*/ {},
-            /*BOO*/ {}
+            /*INT*/ {ReturnType.OK_.getCode(),ReturnType.WAR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},
+            /*FLO*/ {ReturnType.OK_.getCode(),ReturnType.OK_.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode()},
+            /*CHA*/ {ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.OK_.getCode(),ReturnType.WAR.getCode(),ReturnType.ERR.getCode()},
+            /*STR*/ {ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.OK_.getCode(),ReturnType.OK_.getCode(),ReturnType.ERR.getCode()},
+            /*BOO*/ {ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.OK_.getCode()}
 };
 
     static int resultType (int TP1, int TP2, int OP){

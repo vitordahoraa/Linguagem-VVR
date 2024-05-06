@@ -6,6 +6,7 @@ import Gals.SemanticUtils.ReferenceValueType;
 import Gals.SemanticUtils.TemporaryReference;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Stack;
 
 public class Semantico implements Constants
@@ -151,6 +152,23 @@ public class Semantico implements Constants
                 System.out.println("Referência a ser salva: " + currentRefType.toString());
                 break;
             }
+            case 10:{
+                System.out.println("Procurando referência na tabela");
+                Stack<Integer> stackTemp = (Stack<Integer>) stackScope.clone();
+                //System.out.println("Iterando escopo " + stackScope.peek());
+                ReferencePointer referenciaEncontrada = null;
+                while (!stackTemp.empty() && referenciaEncontrada == null){
+                    int scope = stackTemp.peek();
+                    System.out.println("Iterando escopo " + lastScope);
+                    referenciaEncontrada = ReferencePointer.procurarReferencia(currentReference,scope,false,references);
+                    stackTemp.pop();
+                }
+                if(referenciaEncontrada == null){
+                    throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
+                }
+                referenciaEncontrada.setIniciada(true);
+                break;
+            }
             case 11:{
                 System.out.println("Referência é vetor");
                 currentReference.setVector(true);
@@ -168,7 +186,7 @@ public class Semantico implements Constants
             }
             case 14: {
                 System.out.println("Adiciona o param pra lista");
-                references.add(new ReferencePointer(currentReference.getNome(),currentVarType,true,false,stackScope.peek(),true,currentParamPosition,currentReference.isVector(),false,false));
+                references.add(new ReferencePointer(currentReference.getNome(),currentVarType,true,false,stackScope.peek() + 1,true,currentParamPosition,currentReference.isVector(),false,false));
                 currentName = null;
                 System.out.println("Imprime Lista de referência");
                 //ReferencePointer.PrintListaDeReferência(references);
@@ -177,7 +195,15 @@ public class Semantico implements Constants
 
             case 15: {
                 System.out.println("Procurando referência na tabela");
-                ReferencePointer referenciaEncontrada = ReferencePointer.procurarReferencia(currentReference,lastScope,false,references);
+                Stack<Integer> stackTemp = (Stack<Integer>) stackScope.clone();
+                //System.out.println("Iterando escopo " + stackScope.peek());
+                ReferencePointer referenciaEncontrada = null;
+                while (!stackTemp.empty() && referenciaEncontrada == null){
+                    int scope = stackTemp.peek();
+                    System.out.println("Iterando escopo " + lastScope);
+                    referenciaEncontrada = ReferencePointer.procurarReferencia(currentReference,scope,false,references);
+                    stackTemp.pop();
+                }
                 if(referenciaEncontrada == null){
                     throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
                 }
