@@ -133,4 +133,8 @@ public class ReferencePointer {
     public int hashCode() {
         return Objects.hash(nome, tipo, escopo, isVector, isFunction);
     }
+
+    public void setEscopo(int escopo) {
+        this.escopo = escopo;
+    }
 }

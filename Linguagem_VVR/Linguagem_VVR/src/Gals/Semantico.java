@@ -257,7 +257,18 @@ public class Semantico implements Constants
 
                 break;
             }
+            case 19:{
+                System.out.println("Validando expressão booleana");
+                int resultEXP = stackType.pop();
+                if(resultEXP != ReferenceValueType.BOOL.getVarCode()){
+                    throw new SemanticError("Expressão booleana experada");
+                }
+            }
             case 23:{
+                stackOperator.push(OperatorType.LOG.getCode());
+                break;
+            }
+            case 24:{
                 stackOperator.push(OperatorType.BIT.getCode());
                 break;
             }
@@ -275,6 +286,14 @@ public class Semantico implements Constants
             }
             case 28:{
                 stackOperator.push(OperatorType.MUL.getCode());
+                break;
+            }
+            case 29:{
+                stackOperator.push(OperatorType.NEG.getCode());
+                break;
+            }
+            case 30:{
+                stackOperator.push(OperatorType.INC.getCode());
                 break;
             }
             case 31:{
@@ -301,13 +320,58 @@ public class Semantico implements Constants
                 stackOperator.push(OperatorType.MOD.getCode());
                 break;
             }
-            case 48:{
-                System.out.println("Somando valores na stack");
+            case 20,41,42,43,44,45,46,47,48,49:{
+                System.out.println("Validando valores nas stacks");
                 int tipo2 = stackType.pop();
                 int tipo1 = stackType.pop();
                 int op = stackOperator.pop();
 
                 int resultadoEXP = SemanticTable.resultType(tipo1,tipo2,op);
+                if(resultadoEXP == ReturnType.ERR.getCode()){
+                    throw new SemanticError("Retorno da expresão inválida");
+                }
+                System.out.println(resultadoEXP);
+                stackType.push(resultadoEXP);
+                break;
+
+            }
+            case 50:{
+
+                System.out.println("Validando valores nas stacks");
+                int tipo1 = stackType.pop();
+                int op = stackOperator.pop();
+
+                int resultadoEXP = SemanticTable.resultType(tipo1,tipo1,op);
+                if(resultadoEXP == ReturnType.ERR.getCode()){
+                    throw new SemanticError("Retorno da expresão inválida");
+                }
+                System.out.println(resultadoEXP);
+                stackType.push(resultadoEXP);
+                break;
+
+            }
+
+            case 51:{
+
+                System.out.println("Procurando referência na tabela");
+                Stack<Integer> stackTemp = (Stack<Integer>) stackScope.clone();
+                //System.out.println("Iterando escopo " + stackScope.peek());
+                ReferencePointer referenciaEncontrada = null;
+                while (!stackTemp.empty() && referenciaEncontrada == null){
+                    int scope = stackTemp.peek();
+                    System.out.println("Iterando escopo " + lastScope);
+                    referenciaEncontrada = ReferencePointer.procurarReferencia(currentReference,scope,false,references);
+                    stackTemp.pop();
+                }
+                if(referenciaEncontrada == null){
+                    throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
+                }
+                System.out.println("Validando valores nas stacks");
+                referenciaEncontrada.setUtilizada(true);
+                int tipo1 = referenciaEncontrada.getTipo().getVarCode();
+                int op = stackOperator.pop();
+
+                int resultadoEXP = SemanticTable.resultType(tipo1,tipo1,op);
                 if(resultadoEXP == ReturnType.ERR.getCode()){
                     throw new SemanticError("Retorno da expresão inválida");
                 }
@@ -333,6 +397,14 @@ public class Semantico implements Constants
                 referenciaEncontrada.setUtilizada(true);
                 stackType.push(referenciaEncontrada.getTipo().getVarCode());
                 //ReferencePointer.PrintListaDeReferencia(references);
+                break;
+            }
+            case 54:{
+                System.out.println("Incrementar scopo das vars");
+                for(ReferencePointer reference : currentReferences){
+                    System.out.println("Incrementando Scopo "+ reference.getNome());
+                    reference.setEscopo(reference.getEscopo()+1);
+                }
                 break;
             }
 
