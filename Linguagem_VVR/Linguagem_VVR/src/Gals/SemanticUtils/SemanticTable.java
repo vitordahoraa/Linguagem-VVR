@@ -354,11 +354,11 @@ public class SemanticTable {
             /*BOO*/ {ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.ERR.getCode(),ReturnType.OK_.getCode()}
 };
 
-    static int resultType (int TP1, int TP2, int OP){
+    public static int resultType (int TP1, int TP2, int OP){
         return (expTable[TP1][TP2][OP]);
     }
 
-    static int atribType (int TP1, int TP2){
+    public static int atribType (int TP1, int TP2){
         return (atribTable[TP1][TP2]);
     }
 }

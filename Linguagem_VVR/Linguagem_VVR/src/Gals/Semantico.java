@@ -1,9 +1,6 @@
 package Gals;
 
-import Gals.SemanticUtils.ReferencePointer;
-import Gals.SemanticUtils.ReferenceType;
-import Gals.SemanticUtils.ReferenceValueType;
-import Gals.SemanticUtils.TemporaryReference;
+import Gals.SemanticUtils.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -12,13 +9,13 @@ import java.util.Stack;
 public class Semantico implements Constants
 {
     private Stack<Integer> stackScope = new Stack<>();
-
+    private Stack<Integer> stackType = new Stack<>();
+    private ReferenceValueType currentRefAtribType = null;
     private int lastScope = 0;
     private int currentParamPosition = 0;
     private String currentName = null;
     ArrayList<ReferencePointer> references = new ArrayList<>();
     ArrayList<TemporaryReference> tempIdentifiers = new ArrayList<>();
-
     ArrayList<ReferencePointer> currentReferences = new ArrayList<>();
     TemporaryReference currentReference = null;
     private ReferenceValueType currentVarType;
@@ -167,6 +164,8 @@ public class Semantico implements Constants
                     throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
                 }
                 referenciaEncontrada.setIniciada(true);
+                System.out.println("Inserindo tipo da referência na stack");
+                currentRefAtribType = referenciaEncontrada.getTipo();
                 break;
             }
             case 11:{
@@ -178,7 +177,7 @@ public class Semantico implements Constants
             case 13: {
 
                 System.out.println("Adiciona a função pra lista");
-                ReferencePointer reference = new ReferencePointer(currentReference.getNome(), currentVarType, false, false, stackScope.peek(), false, 0, currentReference.isVector(), false, true);
+                ReferencePointer reference = new ReferencePointer(currentReference.getNome(), currentVarType, true, false, stackScope.peek(), false, 0, currentReference.isVector(), false, true);
                 references.add(reference);
                 System.out.println("Imprime Lista de referência");
                 //ReferencePointer.PrintListaDeReferencia(references);
@@ -237,6 +236,28 @@ public class Semantico implements Constants
                     currentReferences.add(reference);
                 }
 
+                break;
+            }
+            case 18: {
+                System.out.println("Verificando se retorno da expressão bate com o referência atruibuída");
+
+                int resultadoExp = stackType.pop();
+
+                int resultadoAtrib = SemanticTable.atribType(currentRefAtribType.getVarCode(),resultadoExp);
+
+                if(resultadoAtrib == ReturnType.ERR.getCode()){
+                    throw new SemanticError ("Atribuição da váriavel "+ currentReference.getNome());
+                }
+                System.out.println("Atribuição da var "+currentReference.getNome() +" válida");
+
+                break;
+            }
+            case 31:{
+                stackType.push(ReferenceValueType.INT.getVarCode());
+                break;
+            }
+            case 35:{
+                stackType.push(ReferenceValueType.CHAR.getVarCode());
                 break;
             }
 
