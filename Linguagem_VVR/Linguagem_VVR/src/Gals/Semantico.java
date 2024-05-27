@@ -2,12 +2,15 @@ package Gals;
 
 import Gals.SemanticUtils.*;
 
+import java.sql.Ref;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Stack;
 
 public class Semantico implements Constants
 {
+    private StringBuilder STRB_Assembly_DATA = new StringBuilder(".data\n");
+    private StringBuilder STRB_Assembly_OP = new StringBuilder(".text\n");
     private Stack<Integer> stackScope = new Stack<>();
     private Stack<Integer> stackType = new Stack<>();
     private Stack<Integer> stackOperator = new Stack<>();
@@ -64,7 +67,8 @@ public class Semantico implements Constants
                 currentName = token.getLexeme();
                 currentReference = new TemporaryReference(currentName,false);
                 tempIdentifiers.add(currentReference);
-                System.out.println("Salvando nome "+ currentName + "");
+                System.out.println("Salvando nome "+ currentName);
+
                 //Verificando o tipo de refência a ser salvo na lista
                 break;
             case 3: {
@@ -161,6 +165,8 @@ public class Semantico implements Constants
                 currentRefType = ReferenceType.VAR;
                 currentRefAtribType = currentVarType;
                 System.out.println("Referência a ser salva: " + currentRefType.toString());
+
+
                 break;
             }
             case 10:{
@@ -429,5 +435,16 @@ public class Semantico implements Constants
                 System.out.println("Acao #"+action+", Token: "+token);
                 break;
         }
+    }
+
+    // Função que gera o assembly na arquitetura BIP
+    public String generateAssembly(){
+        //Gerando .data
+        for(ReferencePointer RefPointer : references){
+            STRB_Assembly_DATA.append(RefPointer.getNome() + " : 0\n");
+        }
+
+
+        return STRB_Assembly_DATA.toString() + STRB_Assembly_OP.toString();
     }
 }

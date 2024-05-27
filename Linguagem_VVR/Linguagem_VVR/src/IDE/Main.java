@@ -43,6 +43,7 @@ public class Main extends javax.swing.JFrame {
         console = new javax.swing.JTextArea();
         buttonCompile = new javax.swing.JButton();
         buttonTable = new javax.swing.JButton();
+        buttonAssembly = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("IDE do Professor");
@@ -72,8 +73,15 @@ public class Main extends javax.swing.JFrame {
         buttonTable.setFont(new java.awt.Font("Helvetica Neue", 0, 14));;
         buttonTable.setText("Gerar tabela");
         buttonTable.addActionListener(new java.awt.event.ActionListener(){
-        public void actionPerformed(java.awt.event.ActionEvent evt) {
-            buttonTableActionPerformed(evt);}
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                buttonTableActionPerformed(evt);}
+        });
+
+        buttonAssembly.setFont(new java.awt.Font("Helvetica Neue", 0, 14));;
+        buttonAssembly.setText("Gerar Assembly");
+        buttonAssembly.addActionListener(new java.awt.event.ActionListener(){
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                buttonAssemblyActionPerformed(evt);}
         });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -88,7 +96,9 @@ public class Main extends javax.swing.JFrame {
                                         .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                                 .addGap(0, 0, Short.MAX_VALUE)
                                                 .addComponent(buttonCompile)
-                                                .addComponent(buttonTable))
+                                                .addComponent(buttonTable)
+                                                .addComponent(buttonAssembly)
+                                        )
                                 )
                                 .addContainerGap())
         );
@@ -102,7 +112,9 @@ public class Main extends javax.swing.JFrame {
                                 .addGap(3, 3, 3)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                         .addComponent(buttonCompile)
-                                        .addComponent(buttonTable))
+                                        .addComponent(buttonTable)
+                                        .addComponent(buttonAssembly)
+                                )
                         )
         );
 
@@ -214,6 +226,72 @@ public class Main extends javax.swing.JFrame {
         }
     }
 
+    private void buttonAssemblyActionPerformed(java.awt.event.ActionEvent evt){
+        if (isSuccess) {
+            ArrayList<ReferencePointer> references = this.references; // Obtenha a lista de referências
+            if (tableWindow != null && tableWindow.isVisible()) {
+                // Atualize os dados da tabela existente
+                JTable existingTable = (JTable) ((JScrollPane) tableWindow.getContentPane().getComponent(0)).getViewport().getComponent(0);
+                DefaultTableModel tableModel = (DefaultTableModel) existingTable.getModel();
+                tableModel.setRowCount(0); // Limpe os dados existentes
+                for (ReferencePointer pointer : references) {
+                    tableModel.addRow(new Object[]{
+                            pointer.getNome(),
+                            pointer.getTipo(),
+                            pointer.isIniciada(),
+                            pointer.isUtilizada(),
+                            pointer.getEscopo(),
+                            pointer.isParameter(),
+                            pointer.getPosicaoParameto(),
+                            pointer.isVector(),
+                            pointer.isReference(),
+                            pointer.isFunction()
+                    });
+                }
+            } else {
+                // Crie uma nova tabela
+                DefaultTableModel tableModel = new DefaultTableModel();
+                tableModel.addColumn("Nome");
+                tableModel.addColumn("Tipo");
+                tableModel.addColumn("Iniciada");
+                tableModel.addColumn("Utilizada");
+                tableModel.addColumn("Escopo");
+                tableModel.addColumn("É Parâmetro");
+                tableModel.addColumn("Posição Parâmetro");
+                tableModel.addColumn("É Vetor");
+                tableModel.addColumn("É Referência");
+                tableModel.addColumn("É Função");
+
+                for (ReferencePointer pointer : references) {
+                    tableModel.addRow(new Object[]{
+                            pointer.getNome(),
+                            pointer.getTipo(),
+                            pointer.isIniciada(),
+                            pointer.isUtilizada(),
+                            pointer.getEscopo(),
+                            pointer.isParameter(),
+                            pointer.getPosicaoParameto(),
+                            pointer.isVector(),
+                            pointer.isReference(),
+                            pointer.isFunction()
+                    });
+                }
+
+                JTable table = new JTable(tableModel);
+                JScrollPane scrollPane = new JScrollPane(table);
+                tableWindow = new JFrame("Tabela");
+                tableWindow.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                tableWindow.add(scrollPane);
+                tableWindow.setSize(500, 500);
+                tableWindow.setLocationRelativeTo(null);
+                tableWindow.setVisible(true);
+            }
+        }
+        else {
+            console.setText("É necessário compilar o código antes de gerar a tabela.");
+        }
+    }
+
     /**
      * @param args the command line arguments
      */
@@ -256,5 +334,6 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextArea sourceInput;
     private javax.swing.JButton buttonTable;
+    private javax.swing.JButton buttonAssembly;
     // End of variables declaration//GEN-END:variables
 }
