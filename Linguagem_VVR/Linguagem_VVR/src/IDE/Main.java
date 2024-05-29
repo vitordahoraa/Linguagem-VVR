@@ -11,6 +11,11 @@ import Gals.SyntaticError;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 
@@ -46,7 +51,7 @@ public class Main extends javax.swing.JFrame {
         buttonAssembly = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("IDE do Professor");
+        setTitle("VVR Language");
         setFont(new java.awt.Font("Andale Mono", 0, 18)); // NOI18N
 
         sourceInput.setColumns(20);
@@ -81,7 +86,12 @@ public class Main extends javax.swing.JFrame {
         buttonAssembly.setText("Gerar Assembly");
         buttonAssembly.addActionListener(new java.awt.event.ActionListener(){
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                buttonAssemblyActionPerformed(evt);}
+                try {
+                    buttonAssemblyActionPerformed(evt);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -123,6 +133,7 @@ public class Main extends javax.swing.JFrame {
 
     private static boolean isSuccess = false;
     private JFrame tableWindow;
+    private JFrame assemblyFilePath;
 
     private void buttonCompileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonCompileActionPerformed
 
@@ -140,6 +151,8 @@ public class Main extends javax.swing.JFrame {
             String retorno = "Compilado com sucesso!\n";
             isSuccess = true;
             references = sem.getReferences();
+            assemblyCode = sem.generateAssembly();
+
             for(ReferencePointer pointer : references){
                 String nome = pointer.getNome();
                 boolean iniciada = pointer.isIniciada();
@@ -226,66 +239,23 @@ public class Main extends javax.swing.JFrame {
         }
     }
 
-    private void buttonAssemblyActionPerformed(java.awt.event.ActionEvent evt){
+    private void buttonAssemblyActionPerformed(java.awt.event.ActionEvent evt) throws IOException {
         if (isSuccess) {
-            ArrayList<ReferencePointer> references = this.references; // Obtenha a lista de referências
-            if (tableWindow != null && tableWindow.isVisible()) {
-                // Atualize os dados da tabela existente
-                JTable existingTable = (JTable) ((JScrollPane) tableWindow.getContentPane().getComponent(0)).getViewport().getComponent(0);
-                DefaultTableModel tableModel = (DefaultTableModel) existingTable.getModel();
-                tableModel.setRowCount(0); // Limpe os dados existentes
-                for (ReferencePointer pointer : references) {
-                    tableModel.addRow(new Object[]{
-                            pointer.getNome(),
-                            pointer.getTipo(),
-                            pointer.isIniciada(),
-                            pointer.isUtilizada(),
-                            pointer.getEscopo(),
-                            pointer.isParameter(),
-                            pointer.getPosicaoParameto(),
-                            pointer.isVector(),
-                            pointer.isReference(),
-                            pointer.isFunction()
-                    });
-                }
-            } else {
-                // Crie uma nova tabela
-                DefaultTableModel tableModel = new DefaultTableModel();
-                tableModel.addColumn("Nome");
-                tableModel.addColumn("Tipo");
-                tableModel.addColumn("Iniciada");
-                tableModel.addColumn("Utilizada");
-                tableModel.addColumn("Escopo");
-                tableModel.addColumn("É Parâmetro");
-                tableModel.addColumn("Posição Parâmetro");
-                tableModel.addColumn("É Vetor");
-                tableModel.addColumn("É Referência");
-                tableModel.addColumn("É Função");
+                //Escolhe diretório para salvar
+                JFileChooser jd = new JFileChooser();
 
-                for (ReferencePointer pointer : references) {
-                    tableModel.addRow(new Object[]{
-                            pointer.getNome(),
-                            pointer.getTipo(),
-                            pointer.isIniciada(),
-                            pointer.isUtilizada(),
-                            pointer.getEscopo(),
-                            pointer.isParameter(),
-                            pointer.getPosicaoParameto(),
-                            pointer.isVector(),
-                            pointer.isReference(),
-                            pointer.isFunction()
-                    });
-                }
+                jd.setDialogTitle("Diretório para salvar assembly");
+                int returnVal= jd.showOpenDialog(null);
 
-                JTable table = new JTable(tableModel);
-                JScrollPane scrollPane = new JScrollPane(table);
-                tableWindow = new JFrame("Tabela");
-                tableWindow.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                tableWindow.add(scrollPane);
-                tableWindow.setSize(500, 500);
-                tableWindow.setLocationRelativeTo(null);
-                tableWindow.setVisible(true);
-            }
+                //Verifica se diretório é valido
+                if(returnVal != JFileChooser.APPROVE_OPTION){
+                    console.setText("Erro ao salvar arquivo");
+                    return;
+                }
+                BufferedWriter writer = new BufferedWriter(new FileWriter(jd.getSelectedFile().getPath().toString()+".txt"));
+                writer.write(assemblyCode);
+
+                writer.close();
         }
         else {
             console.setText("É necessário compilar o código antes de gerar a tabela.");
@@ -335,5 +305,6 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JTextArea sourceInput;
     private javax.swing.JButton buttonTable;
     private javax.swing.JButton buttonAssembly;
+    String assemblyCode;
     // End of variables declaration//GEN-END:variables
 }

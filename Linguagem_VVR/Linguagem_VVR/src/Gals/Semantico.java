@@ -14,6 +14,7 @@ public class Semantico implements Constants
     private Stack<Integer> stackScope = new Stack<>();
     private Stack<Integer> stackType = new Stack<>();
     private Stack<Integer> stackOperator = new Stack<>();
+    private Stack<Object> stackValue = new Stack<>();
     private ReferenceValueType currentRefAtribType = null;
     private int lastScope = 0;
     private int currentParamPosition = 0;
@@ -125,6 +126,7 @@ public class Semantico implements Constants
                 tempIdentifiers = new ArrayList<>();
                 stackType = new Stack<>();
                 stackOperator =  new Stack<>();
+                stackValue = new Stack<>();
                 break;
 
             case 6:
@@ -315,22 +317,27 @@ public class Semantico implements Constants
             }
             case 31:{
                 stackType.push(ReferenceValueType.INT.getVarCode());
+                stackValue.push(Integer.parseInt(token.getLexeme()));
                 break;
             }
             case 32:{
                 stackType.push(ReferenceValueType.DOUBLE.getVarCode());
+                stackValue.push(Double.parseDouble(token.getLexeme()));
                 break;
             }
             case 33:{
                 stackType.push(ReferenceValueType.BOOL.getVarCode());
+                stackValue.push(Boolean.parseBoolean(token.getLexeme()));
                 break;
             }
             case 34:{
                 stackType.push(ReferenceValueType.STRING.getVarCode());
+                stackValue.push(token.getLexeme());
                 break;
             }
             case 35:{
                 stackType.push(ReferenceValueType.CHAR.getVarCode());
+                stackValue.push(token.getLexeme());
                 break;
             }
             case 39:{
@@ -440,10 +447,14 @@ public class Semantico implements Constants
     // Função que gera o assembly na arquitetura BIP
     public String generateAssembly(){
         //Gerando .data
+
+        //Gerando variaveis com valor inicial 0
         for(ReferencePointer RefPointer : references){
-            STRB_Assembly_DATA.append(RefPointer.getNome() + " : 0\n");
+            if(!RefPointer.isFunction() && !RefPointer.isVector())
+                STRB_Assembly_DATA.append(RefPointer.getNome() + " : 0\n");
         }
 
+        //Gerando vetores
 
         return STRB_Assembly_DATA.toString() + STRB_Assembly_OP.toString();
     }
