@@ -9,8 +9,8 @@ import java.util.Stack;
 
 public class Semantico implements Constants
 {
-    private StringBuilder STRB_Assembly_DATA = new StringBuilder(".data\n");
-    private StringBuilder STRB_Assembly_OP = new StringBuilder(".text\n");
+    private StringBuilder STRB_Assembly_DATA = new StringBuilder(".data\n temp1 : 0 \n temp2 : 0 \n temp3 : 0 \n");
+    private StringBuilder STRB_Assembly_INSTRUCTION = new StringBuilder(".text\n");
     private Stack<Integer> stackScope = new Stack<>();
     private Stack<Integer> stackType = new Stack<>();
     private Stack<Integer> stackOperator = new Stack<>();
@@ -18,6 +18,8 @@ public class Semantico implements Constants
     private ReferenceValueType currentRefAtribType = null;
     private int lastScope = 0;
     private int currentParamPosition = 0;
+
+    int vectorSizeOrPosition = 0;
     private String currentName = null;
     ArrayList<ReferencePointer> references = new ArrayList<>();
     ArrayList<TemporaryReference> tempIdentifiers = new ArrayList<>();
@@ -25,6 +27,10 @@ public class Semantico implements Constants
     TemporaryReference currentReference = null;
     private ReferenceValueType currentVarType;
     private ReferenceType currentRefType;
+    int vectorInfo;
+
+
+
 
     public ArrayList<ReferencePointer> getReferences(){
         return references;
@@ -127,6 +133,7 @@ public class Semantico implements Constants
                 stackType = new Stack<>();
                 stackOperator =  new Stack<>();
                 stackValue = new Stack<>();
+                vectorInfo = 0;
                 break;
 
             case 6:
@@ -193,6 +200,7 @@ public class Semantico implements Constants
             case 11:{
                 System.out.println("Referência é vetor");
                 currentReference.setVector(true);
+                currentReference.setVectorSize(vectorSizeOrPosition);
                 break;
             }
 
@@ -216,7 +224,8 @@ public class Semantico implements Constants
 
             case 15: {
                 System.out.println("Procurando referência na tabela");
-                Stack<Integer> stackTemp = (Stack<Integer>) stackScope.clone();
+
+                Stack<Integer> stackTemp = (Stack<Integer>) this.stackScope.clone();
                 //System.out.println("Iterando escopo " + stackScope.peek());
                 ReferencePointer referenciaEncontrada = null;
                 while (!stackTemp.empty() && referenciaEncontrada == null){
@@ -229,8 +238,7 @@ public class Semantico implements Constants
                     throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
                 }
                 referenciaEncontrada.setUtilizada(true);
-                stackType.push(referenciaEncontrada.getTipo().getVarCode());
-                //ReferencePointer.PrintListaDeReferencia(references);
+
                 break;
             }
 
@@ -255,6 +263,10 @@ public class Semantico implements Constants
                     if (existeVar) {
                         throw new SemanticError("Tentativa de adicionar a var " + identifier.getNome() + " em um escopo em que já está declarada");
                     }
+
+                    if (reference.isVector())
+                        reference.setVectorSize(identifier.getVectorSize());
+
                     references.add(reference);
                     currentReferences.add(reference);
                 }
@@ -283,6 +295,37 @@ public class Semantico implements Constants
                     throw new SemanticError("Expressão booleana experada");
                 }
             }
+
+            case 20:{
+                System.out.println("Atribuindo tamanho para o vetor");
+                int resultEXP = stackType.pop();
+                if(resultEXP != ReferenceValueType.INT.getVarCode()){
+                    throw new SemanticError("Expressão inteira experada para tamanho do vetor");
+                }
+                vectorInfo = Integer.parseInt(token.getLexeme());
+            }
+
+            case 21: {
+                System.out.println("Procurando referência na tabela");
+
+                Stack<Integer> stackTemp = (Stack<Integer>) this.stackScope.clone();
+                //System.out.println("Iterando escopo " + stackScope.peek());
+                ReferencePointer referenciaEncontrada = null;
+                while (!stackTemp.empty() && referenciaEncontrada == null){
+                    int scope = stackTemp.peek();
+                    System.out.println("Iterando escopo " + lastScope);
+                    referenciaEncontrada = ReferencePointer.procurarReferencia(currentReference,scope,false,references);
+                    stackTemp.pop();
+                }
+                if(referenciaEncontrada == null){
+                    throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
+                }
+                referenciaEncontrada.setUtilizada(true);
+                stack
+
+                break;
+            }
+
             case 23:{
                 stackOperator.push(OperatorType.LOG.getCode());
                 break;
@@ -340,6 +383,13 @@ public class Semantico implements Constants
                 stackValue.push(token.getLexeme());
                 break;
             }
+
+            case 36:{
+                stackType.push(ReferenceValueType.CHAR.getVarCode());
+                stackValue.push(token.getLexeme());
+                break;
+            }
+
             case 39:{
                 stackOperator.push(OperatorType.DIV.getCode());
                 break;
@@ -348,7 +398,7 @@ public class Semantico implements Constants
                 stackOperator.push(OperatorType.MOD.getCode());
                 break;
             }
-            case 20,41,42,43,44,45,46,47,48,49:{
+            case 41,42,43,44,45,46,47,48,49:{
                 System.out.println("Validando valores nas stacks");
                 int tipo2 = stackType.pop();
                 int tipo1 = stackType.pop();
@@ -450,12 +500,21 @@ public class Semantico implements Constants
 
         //Gerando variaveis com valor inicial 0
         for(ReferencePointer RefPointer : references){
+            // Se não for vetor nem função
             if(!RefPointer.isFunction() && !RefPointer.isVector())
-                STRB_Assembly_DATA.append(RefPointer.getNome() + " : 0\n");
+                STRB_Assembly_DATA.append(" " + RefPointer.getNome() + " : 0\n");
+            //Se for vetor
+            if(RefPointer.isVector()){
+                String vectorSize = "";
+                for(int i = 0; i < RefPointer.getVectorSize(); i++){
+                    vectorSize = vectorSize + "0,";
+                }
+                vectorSize = vectorSize.substring(0,vectorSize.length()-1);
+                STRB_Assembly_DATA.append(" " + RefPointer.getNome() + " : " + vectorSize+"\n");
+            }
         }
 
         //Gerando vetores
-
-        return STRB_Assembly_DATA.toString() + STRB_Assembly_OP.toString();
+        return STRB_Assembly_DATA.toString() + STRB_Assembly_INSTRUCTION.toString();
     }
 }

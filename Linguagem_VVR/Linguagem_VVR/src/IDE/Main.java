@@ -206,6 +206,7 @@ public class Main extends javax.swing.JFrame {
                 tableModel.addColumn("É Parâmetro");
                 tableModel.addColumn("Posição Parâmetro");
                 tableModel.addColumn("É Vetor");
+                tableModel.addColumn("Tamanho Vetor");
                 tableModel.addColumn("É Referência");
                 tableModel.addColumn("É Função");
 
@@ -219,6 +220,7 @@ public class Main extends javax.swing.JFrame {
                             pointer.isParameter(),
                             pointer.getPosicaoParameto(),
                             pointer.isVector(),
+                            pointer.getVectorSize(),
                             pointer.isReference(),
                             pointer.isFunction()
                     });
