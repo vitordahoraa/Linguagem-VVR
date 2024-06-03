@@ -4,6 +4,7 @@ import Gals.SemanticUtils.*;
 
 import java.sql.Ref;
 import java.util.ArrayList;
+import java.util.EmptyStackException;
 import java.util.Iterator;
 import java.util.Stack;
 
@@ -285,13 +286,18 @@ public class Semantico implements Constants
                 if(resultadoAtribType == ReturnType.ERR.getCode()){
                     throw new SemanticError ("Atribuição com a referência "+ currentReference.getNome() + " incorreta");
                 }
-                System.out.println("Atribuição da var "+currentReference.getNome() +" válida, inserindo valor");
+                System.out.println("Atribuição da var "+currentRefAtrib.getNome() +" válida, inserindo valor");
+                //Verificar se a atribuição é vetor
+                if(!currentRefAtrib.isVector()) {
+                    STRB_Assembly_INSTRUCTION.append("STO " + currentRefAtrib.getNome() + "\n");
+                    try {
+                        currentRefAtrib.setLastValue((Integer) stackValue.peek());
+                    } catch (java.util.EmptyStackException ex) {
+                        System.out.println("\n\nERRO AO OLHAR STACK DE VALORES, PROVAVELMENTE POR QUE HÁ VETORES NA EXPRESSÃO. TABELA DE REFERÊNCIAS SE DESATUALIZARÁ!");
+                    }
+                } else{
+                    STRB_Assembly_INSTRUCTION.append("STO temp1\n");
 
-                STRB_Assembly_INSTRUCTION.append("STO "+currentReference.getNome()+"\n");
-                try {
-                    currentRefAtrib.setLastValue((Integer) stackValue.peek());
-                } catch (java.util.EmptyStackException ex){
-                    System.out.println("\n\nERRO AO OLHAR STACK DE VALORES, PROVAVELMENTE POR QUE HÁ VETORES NA EXPRESSÃO. TABELA DE REFERÊNCIAS SE DESATUALIZARÁ!");
                 }
                 break;
             }
@@ -345,10 +351,20 @@ public class Semantico implements Constants
                     System.out.println("Encontrou último valor de "+referenciaEncontrada.getNome() +", igual a "+String.valueOf(referenciaEncontrada.getLastValue()));
                     stackValue.push(referenciaEncontrada.getLastValue());
                 }else{
-
+                    //Se for primeiro operando
                     if(stackOperator.size() == 0){
                         STRB_Assembly_INSTRUCTION.append("STO $indr\n");
                         STRB_Assembly_INSTRUCTION.append("LDV " + referenciaEncontrada.getNome()+"\n");
+                    } else{
+                        STRB_Assembly_INSTRUCTION.append("STO $indr\n");
+                        STRB_Assembly_INSTRUCTION.append("LDV " + referenciaEncontrada.getNome()+"\n");
+                        STRB_Assembly_INSTRUCTION.append("STO temp2\n");
+                        STRB_Assembly_INSTRUCTION.append("LD temp1\n");
+
+                        if(stackOperator.peek() == OperatorType.SUM.getCode())
+                            STRB_Assembly_INSTRUCTION.  append("ADD temp2\n");
+                        else if(stackOperator.peek() == OperatorType.SUB.getCode())
+                            STRB_Assembly_INSTRUCTION.  append("SUB temp2\n");
                     }
                 }
 
@@ -409,13 +425,12 @@ public class Semantico implements Constants
                 stackType.push(ReferenceValueType.INT.getVarCode());
                 stackValue.push(Integer.parseInt(token.getLexeme()));
                 //Gerar assembly
-                if(stackOperator.size() == 0)
-                    STRB_Assembly_INSTRUCTION.  append("LDI "+ token.getLexeme()+"\n");
-                else if(stackOperator.peek() == OperatorType.SUM.getCode())
-                    STRB_Assembly_INSTRUCTION.  append("ADDI "+ token.getLexeme()+"\n");
-                else if(stackOperator.peek() == OperatorType.SUB.getCode())
-                    STRB_Assembly_INSTRUCTION.  append("SUBI "+ token.getLexeme()+"\n");
-
+                    if(stackOperator.size() == 0)
+                        STRB_Assembly_INSTRUCTION.  append("LDI "+ token.getLexeme()+"\n");
+                    else if(stackOperator.peek() == OperatorType.SUM.getCode())
+                        STRB_Assembly_INSTRUCTION.  append("ADDI "+ token.getLexeme()+"\n");
+                    else if(stackOperator.peek() == OperatorType.SUB.getCode())
+                        STRB_Assembly_INSTRUCTION.  append("SUBI "+ token.getLexeme()+"\n");
                 break;
             }
             case 32:{
@@ -452,6 +467,7 @@ public class Semantico implements Constants
             case 37:{
                 vectorReference = currentReference;
                 isVectorReference = true;
+                STRB_Assembly_INSTRUCTION.append("STO temp1\n");
                 break;
             }
 
@@ -489,8 +505,6 @@ public class Semantico implements Constants
                 int tipo2 = stackType.pop();
                 int tipo1 = stackType.pop();
                 int op = stackOperator.pop();
-                int value2 = (Integer)stackValue.pop();
-                int value1 = (Integer)stackValue.pop();
 
                 int resultadoEXP = SemanticTable.resultType(tipo1,tipo2,op);
                 if(resultadoEXP == ReturnType.ERR.getCode()){
@@ -499,10 +513,16 @@ public class Semantico implements Constants
                 System.out.println(resultadoEXP);
                 stackType.push(resultadoEXP);
                 //Calculando resultado
-                if(op == OperatorType.SUM.getCode()){
-                    stackValue.push(value2+value1);
-                } else if(op == OperatorType.SUB.getCode()){
-                    stackValue.push(value2-value1);
+                try {
+                    int value2 = (Integer) stackValue.pop();
+                    int value1 = (Integer) stackValue.pop();
+                    if (op == OperatorType.SUM.getCode()) {
+                        stackValue.push(value2 + value1);
+                    } else if (op == OperatorType.SUB.getCode()) {
+                        stackValue.push(value2 - value1);
+                    }
+                } catch (EmptyStackException ex){
+                    System.out.println("\nERRO CALCULAR VALORES DA EXPRESSÃO, TABELA DE REFERÊNCIA SE DESATUALIZARÁ");
                 }
                 break;
 
