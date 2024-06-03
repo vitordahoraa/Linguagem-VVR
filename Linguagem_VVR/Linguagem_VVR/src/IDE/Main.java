@@ -256,7 +256,7 @@ public class Main extends javax.swing.JFrame {
                     console.setText("Erro ao salvar arquivo");
                     return;
                 }
-                BufferedWriter writer = new BufferedWriter(new FileWriter(jd.getSelectedFile().getPath().toString()+".txt"));
+                BufferedWriter writer = new BufferedWriter(new FileWriter(jd.getSelectedFile().getPath().toString()+".asm"));
                 writer.write(assemblyCode);
 
                 writer.close();

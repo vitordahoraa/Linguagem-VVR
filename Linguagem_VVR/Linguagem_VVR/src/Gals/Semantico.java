@@ -752,6 +752,32 @@ public class Semantico implements Constants
                 }*/
             }
 
+            case 59:{
+                if(!currentReference.isVector()) {
+                    STRB_Assembly_INSTRUCTION.append("LD $in_port\n");
+                    STRB_Assembly_INSTRUCTION.append("STO " + currentReference.getNome() + "\n");
+                } else{
+                    STRB_Assembly_INSTRUCTION.append("STO $indr\n");
+                    STRB_Assembly_INSTRUCTION.append("LD $in_port\n");
+                    STRB_Assembly_INSTRUCTION.append("STOV " + currentReference.getNome() + "\n");
+                }
+
+                break;
+            }
+
+            case 60:{
+                if(!currentReference.isVector()) {
+                    STRB_Assembly_INSTRUCTION.append("LD " + currentReference.getNome() + "\n");
+                    STRB_Assembly_INSTRUCTION.append("STO $out_port\n");
+                } else{
+                    STRB_Assembly_INSTRUCTION.append("STO $indr\n");
+                    STRB_Assembly_INSTRUCTION.append("LDV " + currentReference.getNome() + "\n");
+                    STRB_Assembly_INSTRUCTION.append("STO $out_port\n");
+                }
+
+                break;
+            }
+
 
 
             default:
@@ -761,7 +787,7 @@ public class Semantico implements Constants
     }
 
     // Função que gera o assembly na arquitetura BIP
-    public String generateAssembly(){
+    public String generateAssembly() throws SemanticError {
         //Gerando .data
 
         //Gerando variaveis com valor inicial 0
@@ -775,7 +801,11 @@ public class Semantico implements Constants
                 for(int i = 0; i < RefPointer.getVectorSize(); i++){
                     vectorSize = vectorSize + "0,";
                 }
-                vectorSize = vectorSize.substring(0,vectorSize.length()-1);
+                try {
+                    vectorSize = vectorSize.substring(0, vectorSize.length() - 1);
+                } catch(StringIndexOutOfBoundsException ex){
+                    throw new SemanticError("Impossível iniciar vetor pois tamanho está indefinido");
+                }
                 STRB_Assembly_DATA.append(" " + RefPointer.getNome() + " : " + vectorSize+"\n");
             }
         }
