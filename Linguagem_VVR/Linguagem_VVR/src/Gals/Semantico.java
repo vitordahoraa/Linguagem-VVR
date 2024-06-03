@@ -17,7 +17,7 @@ public class Semantico implements Constants
     private Stack<Object> stackValue = new Stack<>();
     private ReferenceValueType currentRefAtribType = null;
     private ReferencePointer currentRefAtrib = null;
-    private ReferencePointer vectorReference = null;
+    private TemporaryReference vectorReference = null;
     private boolean isVectorReference = false;
     private int lastScope = 0;
     private int currentParamPosition = 0;
@@ -201,8 +201,8 @@ public class Semantico implements Constants
             }
             case 11:{
                 System.out.println("Referência é vetor");
-                currentReference.setVector(true);
-                currentReference.setVectorSize(vectorSizeOrPosition);
+                vectorReference.setVector(true);
+                vectorReference.setVectorSize(vectorSizeOrPosition);
                 break;
             }
 
@@ -288,7 +288,11 @@ public class Semantico implements Constants
                 System.out.println("Atribuição da var "+currentReference.getNome() +" válida, inserindo valor");
 
                 STRB_Assembly_INSTRUCTION.append("STO "+currentReference.getNome()+"\n");
-                currentRefAtrib.setLastValue((Integer) stackValue.peek());
+                try {
+                    currentRefAtrib.setLastValue((Integer) stackValue.peek());
+                } catch (java.util.EmptyStackException ex){
+                    System.out.println("\n\nERRO AO OLHAR STACK DE VALORES, PROVAVELMENTE POR QUE HÁ VETORES NA EXPRESSÃO. TABELA DE REFERÊNCIAS SE DESATUALIZARÁ!");
+                }
                 break;
             }
             case 19:{
@@ -306,6 +310,7 @@ public class Semantico implements Constants
                     throw new SemanticError("Expressão inteira experada para tamanho do vetor");
                 }
                 vectorSizeOrPosition = (Integer) stackValue.pop();
+
                 break;
             }
 
@@ -327,16 +332,20 @@ public class Semantico implements Constants
                 referenciaEncontrada.setUtilizada(true);
                 stackType.push(referenciaEncontrada.getTipo().getVarCode());
 
-                //Gerar assembly
+                //Gerar assembly, mas somente se não for uma expressão de declaração de vetor
                 if(!referenciaEncontrada.isVector()){
-                    if(stackOperator.size() == 0)
-                        STRB_Assembly_INSTRUCTION.  append("LD "+ token.getLexeme()+"\n");
-                    else if(stackOperator.peek() == OperatorType.SUM.getCode())
-                        STRB_Assembly_INSTRUCTION.  append("ADD "+ token.getLexeme()+"\n");
-                    else if(stackOperator.peek() == OperatorType.SUB.getCode())
-                        STRB_Assembly_INSTRUCTION.  append("SUB "+ token.getLexeme()+"\n");
+                    if(!isVectorReference)
+                        if(stackOperator.size() == 0)
+                            STRB_Assembly_INSTRUCTION.  append("LD "+ token.getLexeme()+"\n");
+                        else if(stackOperator.peek() == OperatorType.SUM.getCode())
+                            STRB_Assembly_INSTRUCTION.  append("ADD "+ token.getLexeme()+"\n");
+                        else if(stackOperator.peek() == OperatorType.SUB.getCode())
+                            STRB_Assembly_INSTRUCTION.  append("SUB "+ token.getLexeme()+"\n");
+
+                    System.out.println("Encontrou último valor de "+referenciaEncontrada.getNome() +", igual a "+String.valueOf(referenciaEncontrada.getLastValue()));
                     stackValue.push(referenciaEncontrada.getLastValue());
                 }else{
+
                     if(stackOperator.size() == 0){
                         STRB_Assembly_INSTRUCTION.append("STO $indr\n");
                         STRB_Assembly_INSTRUCTION.append("LDV " + referenciaEncontrada.getNome()+"\n");
@@ -430,9 +439,20 @@ public class Semantico implements Constants
                 break;
             }
             case 36:{
-                tempIdentifiers.add(currentReference);
+                //Lista que agrupa as declarações múltiplas, para depois atribuir os valores
+                //Caso seja uma referência de vetor, ignorar as referências utilizadas dentro do colchetes
+                if(isVectorReference) {
+                    tempIdentifiers.add(vectorReference);
+                    isVectorReference = false;
+                }
+                else
+                    tempIdentifiers.add(currentReference);
                 break;
-
+            }
+            case 37:{
+                vectorReference = currentReference;
+                isVectorReference = true;
+                break;
             }
 
             case 38:{
