@@ -203,6 +203,7 @@ public class Main extends javax.swing.JFrame {
                 tableModel.addColumn("Iniciada");
                 tableModel.addColumn("Utilizada");
                 tableModel.addColumn("Escopo");
+                tableModel.addColumn("Ultimo Valor");
                 tableModel.addColumn("É Parâmetro");
                 tableModel.addColumn("Posição Parâmetro");
                 tableModel.addColumn("É Vetor");
@@ -217,6 +218,7 @@ public class Main extends javax.swing.JFrame {
                             pointer.isIniciada(),
                             pointer.isUtilizada(),
                             pointer.getEscopo(),
+                            pointer.getLastValue(),
                             pointer.isParameter(),
                             pointer.getPosicaoParameto(),
                             pointer.isVector(),

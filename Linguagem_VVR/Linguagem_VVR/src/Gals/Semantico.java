@@ -16,22 +16,21 @@ public class Semantico implements Constants
     private Stack<Integer> stackOperator = new Stack<>();
     private Stack<Object> stackValue = new Stack<>();
     private ReferenceValueType currentRefAtribType = null;
+    private ReferencePointer currentRefAtrib = null;
+    private ReferencePointer vectorReference = null;
+    private boolean isVectorReference = false;
     private int lastScope = 0;
     private int currentParamPosition = 0;
+    boolean isFirstInEXP = true;
 
-    int vectorSizeOrPosition = 0;
+    private int vectorSizeOrPosition = 0;
     private String currentName = null;
-    ArrayList<ReferencePointer> references = new ArrayList<>();
-    ArrayList<TemporaryReference> tempIdentifiers = new ArrayList<>();
-    ArrayList<ReferencePointer> currentReferences = new ArrayList<>();
-    TemporaryReference currentReference = null;
+    private ArrayList<ReferencePointer> references = new ArrayList<>();
+    private ArrayList<TemporaryReference> tempIdentifiers = new ArrayList<>();
+    private ArrayList<ReferencePointer> currentReferences = new ArrayList<>();
+    private TemporaryReference currentReference = null;
     private ReferenceValueType currentVarType;
     private ReferenceType currentRefType;
-    int vectorInfo;
-
-
-
-
     public ArrayList<ReferencePointer> getReferences(){
         return references;
     }
@@ -73,7 +72,6 @@ public class Semantico implements Constants
             case 2:
                 currentName = token.getLexeme();
                 currentReference = new TemporaryReference(currentName,false);
-                tempIdentifiers.add(currentReference);
                 System.out.println("Salvando nome "+ currentName);
 
                 //Verificando o tipo de refência a ser salvo na lista
@@ -118,6 +116,10 @@ public class Semantico implements Constants
                 tempIdentifiers = new ArrayList<>();
                 stackType = new Stack<>();
                 stackOperator =  new Stack<>();
+                currentRefAtrib =  null;
+                isFirstInEXP = true;
+                isVectorReference = false;
+                vectorReference = null;
 
                 break;
 
@@ -133,7 +135,6 @@ public class Semantico implements Constants
                 stackType = new Stack<>();
                 stackOperator =  new Stack<>();
                 stackValue = new Stack<>();
-                vectorInfo = 0;
                 break;
 
             case 6:
@@ -195,6 +196,7 @@ public class Semantico implements Constants
                 referenciaEncontrada.setIniciada(true);
                 System.out.println("Inserindo tipo da referência na stack");
                 currentRefAtribType = referenciaEncontrada.getTipo();
+                currentRefAtrib = referenciaEncontrada;
                 break;
             }
             case 11:{
@@ -238,6 +240,7 @@ public class Semantico implements Constants
                     throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
                 }
                 referenciaEncontrada.setUtilizada(true);
+                stackType.push(referenciaEncontrada.getTipo().getVarCode());
 
                 break;
             }
@@ -263,10 +266,8 @@ public class Semantico implements Constants
                     if (existeVar) {
                         throw new SemanticError("Tentativa de adicionar a var " + identifier.getNome() + " em um escopo em que já está declarada");
                     }
-
                     if (reference.isVector())
                         reference.setVectorSize(identifier.getVectorSize());
-
                     references.add(reference);
                     currentReferences.add(reference);
                 }
@@ -276,16 +277,18 @@ public class Semantico implements Constants
             case 18: {
                 System.out.println("Verificando se retorno da expressão bate com o referência atruibuída");
 
-                int resultadoExp = stackType.pop();
+                int resultadoExpType = stackType.pop();
 
-                int resultadoAtrib = SemanticTable.atribType(currentRefAtribType.getVarCode(),resultadoExp);
+                int resultadoAtribType = SemanticTable.atribType(currentRefAtribType.getVarCode(),resultadoExpType);
                 //  System.out.println("Resultado EXP : " + resultadoExp + "\n CurrentRefAtribType: "+ currentRefAtribType.getVarCode() + "\n Resultado: " + resultadoAtrib);
 
-                if(resultadoAtrib == ReturnType.ERR.getCode()){
+                if(resultadoAtribType == ReturnType.ERR.getCode()){
                     throw new SemanticError ("Atribuição com a referência "+ currentReference.getNome() + " incorreta");
                 }
-                System.out.println("Atribuição da var "+currentReference.getNome() +" válida");
+                System.out.println("Atribuição da var "+currentReference.getNome() +" válida, inserindo valor");
 
+                STRB_Assembly_INSTRUCTION.append("STO "+currentReference.getNome()+"\n");
+                currentRefAtrib.setLastValue((Integer) stackValue.peek());
                 break;
             }
             case 19:{
@@ -302,7 +305,8 @@ public class Semantico implements Constants
                 if(resultEXP != ReferenceValueType.INT.getVarCode()){
                     throw new SemanticError("Expressão inteira experada para tamanho do vetor");
                 }
-                vectorInfo = Integer.parseInt(token.getLexeme());
+                vectorSizeOrPosition = (Integer) stackValue.pop();
+                break;
             }
 
             case 21: {
@@ -321,11 +325,45 @@ public class Semantico implements Constants
                     throw new SemanticError("Variavél " + currentReference.getNome() + " não encontrada");
                 }
                 referenciaEncontrada.setUtilizada(true);
-                stack
+                stackType.push(referenciaEncontrada.getTipo().getVarCode());
+
+                //Gerar assembly
+                if(!referenciaEncontrada.isVector()){
+                    if(stackOperator.size() == 0)
+                        STRB_Assembly_INSTRUCTION.  append("LD "+ token.getLexeme()+"\n");
+                    else if(stackOperator.peek() == OperatorType.SUM.getCode())
+                        STRB_Assembly_INSTRUCTION.  append("ADD "+ token.getLexeme()+"\n");
+                    else if(stackOperator.peek() == OperatorType.SUB.getCode())
+                        STRB_Assembly_INSTRUCTION.  append("SUB "+ token.getLexeme()+"\n");
+                    stackValue.push(referenciaEncontrada.getLastValue());
+                }else{
+                    if(stackOperator.size() == 0){
+                        STRB_Assembly_INSTRUCTION.append("STO $indr\n");
+                        STRB_Assembly_INSTRUCTION.append("LDV " + referenciaEncontrada.getNome()+"\n");
+                    }
+                }
 
                 break;
             }
 
+            case 22: {
+                System.out.println("Verificando se retorno da expressão bate com o referência atruibuída");
+
+                int resultadoExpType = stackType.pop();
+
+                int resultadoAtribType = SemanticTable.atribType(currentRefAtribType.getVarCode(),resultadoExpType);
+                //  System.out.println("Resultado EXP : " + resultadoExp + "\n CurrentRefAtribType: "+ currentRefAtribType.getVarCode() + "\n Resultado: " + resultadoAtrib);
+
+                if(resultadoAtribType == ReturnType.ERR.getCode()){
+                    throw new SemanticError ("Atribuição com a referência "+ currentReference.getNome() + " incorreta");
+                }
+                for(ReferencePointer reference : currentReferences){
+                    System.out.println("Declaração da var "+reference.getNome() +" válida, inserindo valor");
+                    STRB_Assembly_INSTRUCTION.append("STO "+reference.getNome()+"\n");
+                    reference.setLastValue((Integer) stackValue.peek());
+                }
+                break;
+            }
             case 23:{
                 stackOperator.push(OperatorType.LOG.getCode());
                 break;
@@ -361,6 +399,14 @@ public class Semantico implements Constants
             case 31:{
                 stackType.push(ReferenceValueType.INT.getVarCode());
                 stackValue.push(Integer.parseInt(token.getLexeme()));
+                //Gerar assembly
+                if(stackOperator.size() == 0)
+                    STRB_Assembly_INSTRUCTION.  append("LDI "+ token.getLexeme()+"\n");
+                else if(stackOperator.peek() == OperatorType.SUM.getCode())
+                    STRB_Assembly_INSTRUCTION.  append("ADDI "+ token.getLexeme()+"\n");
+                else if(stackOperator.peek() == OperatorType.SUB.getCode())
+                    STRB_Assembly_INSTRUCTION.  append("SUBI "+ token.getLexeme()+"\n");
+
                 break;
             }
             case 32:{
@@ -383,10 +429,14 @@ public class Semantico implements Constants
                 stackValue.push(token.getLexeme());
                 break;
             }
-
             case 36:{
-                stackType.push(ReferenceValueType.CHAR.getVarCode());
-                stackValue.push(token.getLexeme());
+                tempIdentifiers.add(currentReference);
+                break;
+
+            }
+
+            case 38:{
+                stackOperator.push(OperatorType.SUB.getCode());
                 break;
             }
 
@@ -398,7 +448,7 @@ public class Semantico implements Constants
                 stackOperator.push(OperatorType.MOD.getCode());
                 break;
             }
-            case 41,42,43,44,45,46,47,48,49:{
+            case 41,42,43,44,45,46,47,49:{
                 System.out.println("Validando valores nas stacks");
                 int tipo2 = stackType.pop();
                 int tipo1 = stackType.pop();
@@ -413,6 +463,31 @@ public class Semantico implements Constants
                 break;
 
             }
+
+            case 48:{
+                System.out.println("Validando valores inteiros nas stacks");
+                int tipo2 = stackType.pop();
+                int tipo1 = stackType.pop();
+                int op = stackOperator.pop();
+                int value2 = (Integer)stackValue.pop();
+                int value1 = (Integer)stackValue.pop();
+
+                int resultadoEXP = SemanticTable.resultType(tipo1,tipo2,op);
+                if(resultadoEXP == ReturnType.ERR.getCode()){
+                    throw new SemanticError("Retorno da expresão inválida");
+                }
+                System.out.println(resultadoEXP);
+                stackType.push(resultadoEXP);
+                //Calculando resultado
+                if(op == OperatorType.SUM.getCode()){
+                    stackValue.push(value2+value1);
+                } else if(op == OperatorType.SUB.getCode()){
+                    stackValue.push(value2-value1);
+                }
+                break;
+
+            }
+
             case 50:{
 
                 System.out.println("Validando valores nas stacks");

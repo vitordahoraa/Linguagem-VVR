@@ -5,6 +5,7 @@ public class TemporaryReference {
     boolean isVector;
 
     int vectorSize;
+    int value;
 
     public TemporaryReference(String nome, boolean isVector) {
         this.nome = nome;
@@ -29,6 +30,14 @@ public class TemporaryReference {
 
     public int getVectorSize() {
         return vectorSize;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    public void setValue(int value) {
+        this.value = value;
     }
 
     public void setVectorSize(int vectorSize) {

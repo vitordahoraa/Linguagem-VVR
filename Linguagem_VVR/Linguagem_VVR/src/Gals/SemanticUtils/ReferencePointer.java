@@ -18,6 +18,7 @@ public class ReferencePointer {
     boolean isReference;
     boolean isFunction;
     int vectorSize;
+    int lastValue;
 
     //Overload Constructor for non vectors
     public ReferencePointer(String nome, ReferenceValueType tipo, boolean iniciada, boolean utilizada, int escopo, boolean isParameter, int posicaoParameto, boolean isVector, boolean isReference, boolean isFunction) {
@@ -31,6 +32,7 @@ public class ReferencePointer {
         this.isVector = isVector;
         this.isReference = isReference;
         this.isFunction = isFunction;
+        this.lastValue = 0;
     }
 
     public void setIniciada(boolean iniciada) {
@@ -87,6 +89,14 @@ public class ReferencePointer {
 
     public void setVectorSize(int vectorSize) {
         this.vectorSize = vectorSize;
+    }
+
+    public int getLastValue() {
+        return lastValue;
+    }
+
+    public void setLastValue(int lastValue) {
+        this.lastValue = lastValue;
     }
 
     @Override
