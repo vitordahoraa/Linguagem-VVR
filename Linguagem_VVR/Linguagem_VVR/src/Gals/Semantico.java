@@ -14,6 +14,8 @@ public class Semantico implements Constants
     private StringBuilder STRB_Assembly_INSTRUCTION = new StringBuilder(".text\n");
     private Stack<Integer> stackScope = new Stack<>();
     private Stack<Integer> stackType = new Stack<>();
+    private Stack<Integer> expressionPosition = new Stack<>();
+
     private Stack<Integer> stackOperator = new Stack<>();
     private Stack<Object> stackValue = new Stack<>();
     private ReferenceValueType currentRefAtribType = null;
@@ -32,6 +34,7 @@ public class Semantico implements Constants
     private TemporaryReference currentReference = null;
     private ReferenceValueType currentVarType;
     private ReferenceType currentRefType;
+    private boolean isDeclaration;
     public ArrayList<ReferencePointer> getReferences(){
         return references;
     }
@@ -121,6 +124,7 @@ public class Semantico implements Constants
                 isFirstInEXP = true;
                 isVectorReference = false;
                 vectorReference = null;
+                expressionPosition = new Stack<>();
 
                 break;
 
@@ -136,6 +140,12 @@ public class Semantico implements Constants
                 stackType = new Stack<>();
                 stackOperator =  new Stack<>();
                 stackValue = new Stack<>();
+                isDeclaration = false;
+                currentRefAtrib =  null;
+                isFirstInEXP = true;
+                isVectorReference = false;
+                vectorReference = null;
+                expressionPosition = new Stack<>();
                 break;
 
             case 6:
@@ -175,13 +185,15 @@ public class Semantico implements Constants
                 System.out.println("Tipo " + currentVarType.toString() + " armazenado");
                 currentRefType = ReferenceType.VAR;
                 currentRefAtribType = currentVarType;
+                isDeclaration = true;
+
                 System.out.println("Referência a ser salva: " + currentRefType.toString());
 
 
                 break;
             }
             case 10:{
-                System.out.println("Procurando referência na tabela");
+                System.out.println("Procurando referência na tabela para atribuir");
                 Stack<Integer> stackTemp = (Stack<Integer>) stackScope.clone();
                 //System.out.println("Iterando escopo " + stackScope.peek());
                 ReferencePointer referenciaEncontrada = null;
@@ -226,7 +238,7 @@ public class Semantico implements Constants
             }
 
             case 15: {
-                System.out.println("Procurando referência na tabela");
+                System.out.println("Procurando referência na tabela na chamada de parâmetro");
 
                 Stack<Integer> stackTemp = (Stack<Integer>) this.stackScope.clone();
                 //System.out.println("Iterando escopo " + stackScope.peek());
@@ -321,7 +333,7 @@ public class Semantico implements Constants
             }
 
             case 21: {
-                System.out.println("Procurando referência na tabela");
+                System.out.println("Procurando referência na tabela para valor de expressão");
 
                 Stack<Integer> stackTemp = (Stack<Integer>) this.stackScope.clone();
                 //System.out.println("Iterando escopo " + stackScope.peek());
@@ -339,20 +351,29 @@ public class Semantico implements Constants
                 stackType.push(referenciaEncontrada.getTipo().getVarCode());
 
                 //Gerar assembly, mas somente se não for uma expressão de declaração de vetor
-                if(!referenciaEncontrada.isVector()){
-                    if(!isVectorReference)
-                        if(stackOperator.size() == 0)
-                            STRB_Assembly_INSTRUCTION.  append("LD "+ token.getLexeme()+"\n");
-                        else if(stackOperator.peek() == OperatorType.SUM.getCode())
-                            STRB_Assembly_INSTRUCTION.  append("ADD "+ token.getLexeme()+"\n");
-                        else if(stackOperator.peek() == OperatorType.SUB.getCode())
-                            STRB_Assembly_INSTRUCTION.  append("SUB "+ token.getLexeme()+"\n");
+                if(!referenciaEncontrada.isVector()) {
+                    if (!isVectorReference)
+                        //Verifica a posição na expressão
+                        if (expressionPosition.size() == 0) {
+                            STRB_Assembly_INSTRUCTION.append("LD " + token.getLexeme() + "\n");
+                            expressionPosition.push(1);
+                        } else {
+                            if (expressionPosition.peek() == 0)
+                                STRB_Assembly_INSTRUCTION.append("LD " + token.getLexeme() + "\n");
+                            else if (stackOperator.peek() == OperatorType.SUM.getCode())
+                                STRB_Assembly_INSTRUCTION.append("ADD " + token.getLexeme() + "\n");
+                            else if (stackOperator.peek() == OperatorType.SUB.getCode())
+                                STRB_Assembly_INSTRUCTION.append("SUB " + token.getLexeme() + "\n");
 
+                            int currentPosition = expressionPosition.pop();
+                            expressionPosition.push(currentPosition+1);
+
+                        }
                     System.out.println("Encontrou último valor de "+referenciaEncontrada.getNome() +", igual a "+String.valueOf(referenciaEncontrada.getLastValue()));
                     stackValue.push(referenciaEncontrada.getLastValue());
                 }else{
                     //Se for primeiro operando
-                    if(stackOperator.size() == 0){
+                    if(isFirstInEXP){
                         STRB_Assembly_INSTRUCTION.append("STO $indr\n");
                         STRB_Assembly_INSTRUCTION.append("LDV " + referenciaEncontrada.getNome()+"\n");
                     } else{
@@ -367,6 +388,7 @@ public class Semantico implements Constants
                             STRB_Assembly_INSTRUCTION.  append("SUB temp2\n");
                     }
                 }
+                isFirstInEXP = false;
 
                 break;
             }
@@ -424,13 +446,30 @@ public class Semantico implements Constants
             case 31:{
                 stackType.push(ReferenceValueType.INT.getVarCode());
                 stackValue.push(Integer.parseInt(token.getLexeme()));
+                System.out.println("BANANA1");
                 //Gerar assembly
-                    if(stackOperator.size() == 0)
-                        STRB_Assembly_INSTRUCTION.  append("LDI "+ token.getLexeme()+"\n");
-                    else if(stackOperator.peek() == OperatorType.SUM.getCode())
-                        STRB_Assembly_INSTRUCTION.  append("ADDI "+ token.getLexeme()+"\n");
-                    else if(stackOperator.peek() == OperatorType.SUB.getCode())
-                        STRB_Assembly_INSTRUCTION.  append("SUBI "+ token.getLexeme()+"\n");
+                //Caso for uma expressão dentro de uma declaração de vetor, não gerar assembly
+                if(!(isVectorReference && isDeclaration)) {
+                    System.out.println("BANANA2");
+                    //Se for a primeira posição, dar load
+                    if (expressionPosition.size() == 0) {
+                        STRB_Assembly_INSTRUCTION.append("LDI " + token.getLexeme() + "\n");
+                        expressionPosition.push(1);
+                    }
+                    //Se não, fazer as operações
+                    else {
+                        if(expressionPosition.peek()==0){
+                            STRB_Assembly_INSTRUCTION.append("LDI " + token.getLexeme() + "\n");
+
+                        }else if (stackOperator.peek() == OperatorType.SUM.getCode())
+                            STRB_Assembly_INSTRUCTION.append("ADDI " + token.getLexeme() + "\n");
+                        else if (stackOperator.peek() == OperatorType.SUB.getCode())
+                            STRB_Assembly_INSTRUCTION.append("SUBI " + token.getLexeme() + "\n");
+                        int currentEXPPos = expressionPosition.pop();
+                        expressionPosition.push(currentEXPPos + 1);
+                    }
+                }
+
                 break;
             }
             case 32:{
@@ -467,7 +506,8 @@ public class Semantico implements Constants
             case 37:{
                 vectorReference = currentReference;
                 isVectorReference = true;
-                STRB_Assembly_INSTRUCTION.append("STO temp1\n");
+                if(!isDeclaration)
+                    STRB_Assembly_INSTRUCTION.append("STO temp1\n");
                 break;
             }
 
@@ -573,6 +613,12 @@ public class Semantico implements Constants
                 break;
 
             }
+
+            case 52:{
+                isDeclaration = true;
+                break;
+            }
+
             case 53:{
                 System.out.println("Procurando referência na tabela");
                 Stack<Integer> stackTemp = (Stack<Integer>) stackScope.clone();
@@ -598,6 +644,14 @@ public class Semantico implements Constants
                     System.out.println("Incrementando Scopo "+ reference.getNome());
                     reference.setEscopo(reference.getEscopo()+1);
                 }
+                break;
+            }
+            case 55:{
+                expressionPosition.push(0);
+                break;
+            }
+            case 56:{
+                expressionPosition.pop();
                 break;
             }
 
