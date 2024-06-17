@@ -42,6 +42,7 @@ public class Semantico implements Constants
     private boolean isResultEXP;
 
     private String lastBooleanOperator;
+    private String AssemblyVariableINC;
     public ArrayList<ReferencePointer> getReferences(){
         return references;
     }
@@ -135,6 +136,7 @@ public class Semantico implements Constants
                 isResultEXP = true;
                 isAtribToVector = false;
                 TempVectorReference = null;
+                AssemblyVariableINC = null;
 
                 break;
 
@@ -160,6 +162,7 @@ public class Semantico implements Constants
                 isAtribToVector = false;
                 TempVectorReference = null;
                 lastBooleanOperator = null;
+                AssemblyVariableINC = null;
                 break;
 
             case 6:
@@ -322,7 +325,7 @@ public class Semantico implements Constants
                 System.out.println("Atribuição da var "+currentRefAtrib.getNome() +" válida, inserindo valor");
                 //Verificar se a atribuição é vetor
                 if(!currentRefAtrib.isVector() ) {
-                    STRB_Assembly_INSTRUCTION.append("STO " + currentRefAtrib.getNome() + "\n");
+                    STRB_Assembly_INSTRUCTION.append("STO " + currentRefAtrib.getNome() + "_" + currentRefAtrib.getEscopo()+"\n");
                     try {
                         currentRefAtrib.setLastValue((Integer) stackValue.peek());
                     } catch (java.util.EmptyStackException ex) {
@@ -333,7 +336,7 @@ public class Semantico implements Constants
                     STRB_Assembly_INSTRUCTION.append("LD temp1\n");
                     STRB_Assembly_INSTRUCTION.append("STO $indr\n");
                     STRB_Assembly_INSTRUCTION.append("LD temp2\n");
-                    STRB_Assembly_INSTRUCTION.append("STOV "+currentRefAtrib.getNome()+"\n");
+                    STRB_Assembly_INSTRUCTION.append("STOV "+currentRefAtrib.getNome()+"_"+currentRefAtrib.getEscopo()+"\n");
 
 
                 }
@@ -377,6 +380,9 @@ public class Semantico implements Constants
                 }
                 referenciaEncontrada.setUtilizada(true);
                 stackType.push(referenciaEncontrada.getTipo().getVarCode());
+                String AssemblyVariable = referenciaEncontrada.getNome() + "_" + referenciaEncontrada.getEscopo();
+
+                AssemblyVariableINC =  AssemblyVariable;
 
                 //Gerar assembly, mas somente se não for uma expressão de declaração de vetor
                 if(!referenciaEncontrada.isVector()) {
@@ -384,44 +390,47 @@ public class Semantico implements Constants
                     if (!(isVectorReference && isDeclaration))
                         //Verifica a posição na expressão
                         if (expressionPosition.size() == 0) {
-                            STRB_Assembly_INSTRUCTION.append("LD " + currentName + "\n");
+                            STRB_Assembly_INSTRUCTION.append("LD " + AssemblyVariable + "\n");
                             expressionPosition.push(1);
                         } else {
                             if (expressionPosition.peek() == 0)
-                                STRB_Assembly_INSTRUCTION.append("LD " + currentName + "\n");
+                                STRB_Assembly_INSTRUCTION.append("LD " + AssemblyVariable + "\n");
                             else if (stackOperator.peek() == OperatorType.SUM.getCode())
-                                STRB_Assembly_INSTRUCTION.append("ADD " + currentName + "\n");
+                                STRB_Assembly_INSTRUCTION.append("ADD " + AssemblyVariable + "\n");
                             else if (stackOperator.peek() == OperatorType.SUB.getCode())
-                                STRB_Assembly_INSTRUCTION.append("SUB " + currentName + "\n");
+                                STRB_Assembly_INSTRUCTION.append("SUB " + AssemblyVariable + "\n");
                             else if (stackOperator.peek() == OperatorType.REL.getCode()){
                                 STRB_Assembly_INSTRUCTION.append("STO temp1\n");
-                                STRB_Assembly_INSTRUCTION.append("LD "+ currentName + "\n");
+                                STRB_Assembly_INSTRUCTION.append("LD "+ AssemblyVariable + "\n");
                                 STRB_Assembly_INSTRUCTION.append("STO temp2\n");
                                 STRB_Assembly_INSTRUCTION.append("LD temp1\n");
                                 STRB_Assembly_INSTRUCTION.append("SUB temp2\n");
 
+                            }
+                            else if (stackOperator.peek() == OperatorType.INC.getCode()){
+                                STRB_Assembly_INSTRUCTION.append("STO " + AssemblyVariable + "\n");
                             }
 
                             int currentPosition = expressionPosition.pop();
                             expressionPosition.push(currentPosition+1);
 
                         }
-                    System.out.println("Encontrou último valor de "+referenciaEncontrada.getNome() +", igual a "+String.valueOf(referenciaEncontrada.getLastValue()));
+                    System.out.println("Encontrou último valor de "+AssemblyVariable +", igual a "+String.valueOf(referenciaEncontrada.getLastValue()));
                     stackValue.push(referenciaEncontrada.getLastValue());
                 }else{
                     //Se for primeiro operando
                     if(expressionPosition.size()==0){
                         STRB_Assembly_INSTRUCTION.append("STO $indr\n");
-                        STRB_Assembly_INSTRUCTION.append("LDV " + referenciaEncontrada.getNome()+"\n");
+                        STRB_Assembly_INSTRUCTION.append("LDV " + AssemblyVariable+"\n");
                         expressionPosition.push(1);
                     }
                     else if(expressionPosition.peek() == 0){
                         STRB_Assembly_INSTRUCTION.append("STO $indr\n");
-                        STRB_Assembly_INSTRUCTION.append("LDV " + referenciaEncontrada.getNome()+"\n");
+                        STRB_Assembly_INSTRUCTION.append("LDV " + AssemblyVariable+"\n");
                     } else {
                         if (isAtribToVector) {
                             STRB_Assembly_INSTRUCTION.append("STO $indr\n");
-                            STRB_Assembly_INSTRUCTION.append("LDV " + referenciaEncontrada.getNome() + "\n");
+                            STRB_Assembly_INSTRUCTION.append("LDV " + AssemblyVariable + "\n");
                             STRB_Assembly_INSTRUCTION.append("STO temp3\n");
                             STRB_Assembly_INSTRUCTION.append("LD temp2\n");
 
@@ -432,7 +441,7 @@ public class Semantico implements Constants
 
                         } else {
                             STRB_Assembly_INSTRUCTION.append("STO $indr\n");
-                            STRB_Assembly_INSTRUCTION.append("LDV " + referenciaEncontrada.getNome() + "\n");
+                            STRB_Assembly_INSTRUCTION.append("LDV " + AssemblyVariable + "\n");
                             STRB_Assembly_INSTRUCTION.append("STO temp2\n");
                             STRB_Assembly_INSTRUCTION.append("LD temp1\n");
 
@@ -462,7 +471,7 @@ public class Semantico implements Constants
                 }
                 for(ReferencePointer reference : currentReferences){
                     System.out.println("Declaração da var "+reference.getNome() +" válida, inserindo valor");
-                    STRB_Assembly_INSTRUCTION.append("STO "+reference.getNome()+"\n");
+                    STRB_Assembly_INSTRUCTION.append("STO "+reference.getNome()+ "_"+ reference.getEscopo() + "\n");
                     //Se for vetor na declaração, não colocar no lastValue
                     try {
                         reference.setLastValue((Integer) stackValue.peek());
@@ -483,7 +492,6 @@ public class Semantico implements Constants
             case 25:{
                 stackOperator.push(OperatorType.REL.getCode());
                 lastBooleanOperator = token.getLexeme();
-                System.out.println(lastBooleanOperator);
                 break;
             }
             case 26:{
@@ -504,6 +512,8 @@ public class Semantico implements Constants
             }
             case 30:{
                 stackOperator.push(OperatorType.INC.getCode());
+                STRB_Assembly_INSTRUCTION.append("ADDI 1\n");
+                STRB_Assembly_INSTRUCTION.append("STO "+AssemblyVariableINC+"\n");
                 break;
             }
             case 31:{
@@ -530,7 +540,7 @@ public class Semantico implements Constants
                             STRB_Assembly_INSTRUCTION.append("SUBI " + token.getLexeme() + "\n");
                         } else if(stackOperator.peek() == OperatorType.REL.getCode()){
                             STRB_Assembly_INSTRUCTION.append("STO temp1\n");
-                            STRB_Assembly_INSTRUCTION.append("LDI "+ currentName + "\n");
+                            STRB_Assembly_INSTRUCTION.append("LDI "+ token.getLexeme() + "\n");
                             STRB_Assembly_INSTRUCTION.append("STO temp2\n");
                             STRB_Assembly_INSTRUCTION.append("LD temp1\n");
                             STRB_Assembly_INSTRUCTION.append("SUB temp2\n");
@@ -837,6 +847,56 @@ public class Semantico implements Constants
                 break;
             }
 
+            case 64:{
+
+                String label = "L_WHILE_START_EXP_" + String.valueOf(lastScope);
+                stackLabel.push(label);
+                STRB_Assembly_INSTRUCTION.append(label+":\n");
+                break;
+            }
+
+            case 65:{
+
+                String label = "L_WHILE_END_SCOPE_" + String.valueOf(lastScope);
+                stackLabel.push(label);
+                writeConditionalBranchAssembly(lastBooleanOperator,label);
+                break;
+            }
+
+            case 66:{
+
+                String labelScope = stackLabel.pop();
+                String labelEXP = stackLabel.pop();
+
+                STRB_Assembly_INSTRUCTION.append("JMP "+ labelEXP +"\n");
+                STRB_Assembly_INSTRUCTION.append(labelScope+":\n");
+
+                break;
+            }
+
+
+            case 67:{
+
+                String label = "L_DO_WHILE_START_EXP_" + String.valueOf(lastScope);
+                stackLabel.push(label);
+                STRB_Assembly_INSTRUCTION.append(label+":\n");
+                break;
+            }
+
+            case 68:{
+                String label = stackLabel.pop();
+
+                writeConditionalBranchAssemblyBackwards(lastBooleanOperator,label);
+                break;
+            }
+            case 69:{
+                expressionPosition = new Stack<>();
+                break;
+            }
+            case 70:{
+                expressionPosition = new Stack<>();
+                break;
+            }
             default:
                 System.out.println("Acao #"+action+", Token: "+token);
                 break;
@@ -851,7 +911,7 @@ public class Semantico implements Constants
         for(ReferencePointer RefPointer : references){
             // Se não for vetor nem função
             if(!RefPointer.isFunction() && !RefPointer.isVector())
-                STRB_Assembly_DATA.append(" " + RefPointer.getNome() + " : 0\n");
+                STRB_Assembly_DATA.append(" " + RefPointer.getNome() + "_" + RefPointer.getEscopo()+" : 0\n");
             //Se for vetor
             if(RefPointer.isVector()){
                 String vectorSize = "";
@@ -863,7 +923,7 @@ public class Semantico implements Constants
                 } catch(StringIndexOutOfBoundsException ex){
                     throw new SemanticError("Impossível iniciar vetor pois tamanho está indefinido");
                 }
-                STRB_Assembly_DATA.append(" " + RefPointer.getNome() + " : " + vectorSize+"\n");
+                STRB_Assembly_DATA.append(" " + RefPointer.getNome()  + "_" + RefPointer.getEscopo() + " : " + vectorSize+"\n");
             }
         }
 
@@ -897,6 +957,38 @@ public class Semantico implements Constants
             }
             case ">=":{
                 STRB_Assembly_INSTRUCTION.append("BLT "+label+"\n");
+                break;
+            }
+            default:{
+                throw new SemanticError("OPERADOR RELACIONAL NÃO IDENTIFICADO");
+            }
+        }
+    }
+
+    private void writeConditionalBranchAssemblyBackwards(String lastBooleanOperator, String label) throws SemanticError{
+        switch (lastBooleanOperator){
+            case "<":{
+                STRB_Assembly_INSTRUCTION.append("BLT "+label+"\n");
+                break;
+            }
+            case ">":{
+                STRB_Assembly_INSTRUCTION.append("BGT "+label+"\n");
+                break;
+            }
+            case "==":{
+                STRB_Assembly_INSTRUCTION.append("BEQ "+label+"\n");
+                break;
+            }
+            case "!=":{
+                STRB_Assembly_INSTRUCTION.append("BNQ "+label+"\n");
+                break;
+            }
+            case "<=":{
+                STRB_Assembly_INSTRUCTION.append("BLE "+label+"\n");
+                break;
+            }
+            case ">=":{
+                STRB_Assembly_INSTRUCTION.append("BGE "+label+"\n");
                 break;
             }
             default:{
