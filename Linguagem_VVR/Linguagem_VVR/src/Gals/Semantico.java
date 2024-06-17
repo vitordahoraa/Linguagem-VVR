@@ -19,6 +19,7 @@ public class Semantico implements Constants
 
     private Stack<Integer> stackOperator = new Stack<>();
     private Stack<Object> stackValue = new Stack<>();
+    private Stack<String> stackLabel = new Stack<>();
     private ReferenceValueType currentRefAtribType = null;
     private ReferencePointer currentRefAtrib = null;
     private TemporaryReference vectorReference = null;
@@ -39,6 +40,8 @@ public class Semantico implements Constants
     private ReferenceType currentRefType;
     private boolean isDeclaration;
     private boolean isResultEXP;
+
+    private String lastBooleanOperator;
     public ArrayList<ReferencePointer> getReferences(){
         return references;
     }
@@ -156,6 +159,7 @@ public class Semantico implements Constants
                 isResultEXP = true;
                 isAtribToVector = false;
                 TempVectorReference = null;
+                lastBooleanOperator = null;
                 break;
 
             case 6:
@@ -341,6 +345,7 @@ public class Semantico implements Constants
                 if(resultEXP != ReferenceValueType.BOOL.getVarCode()){
                     throw new SemanticError("Expressão booleana experada");
                 }
+                break;
             }
 
             case 20:{
@@ -388,6 +393,14 @@ public class Semantico implements Constants
                                 STRB_Assembly_INSTRUCTION.append("ADD " + currentName + "\n");
                             else if (stackOperator.peek() == OperatorType.SUB.getCode())
                                 STRB_Assembly_INSTRUCTION.append("SUB " + currentName + "\n");
+                            else if (stackOperator.peek() == OperatorType.REL.getCode()){
+                                STRB_Assembly_INSTRUCTION.append("STO temp1\n");
+                                STRB_Assembly_INSTRUCTION.append("LD "+ currentName + "\n");
+                                STRB_Assembly_INSTRUCTION.append("STO temp2\n");
+                                STRB_Assembly_INSTRUCTION.append("LD temp1\n");
+                                STRB_Assembly_INSTRUCTION.append("SUB temp2\n");
+
+                            }
 
                             int currentPosition = expressionPosition.pop();
                             expressionPosition.push(currentPosition+1);
@@ -469,6 +482,8 @@ public class Semantico implements Constants
             }
             case 25:{
                 stackOperator.push(OperatorType.REL.getCode());
+                lastBooleanOperator = token.getLexeme();
+                System.out.println(lastBooleanOperator);
                 break;
             }
             case 26:{
@@ -513,6 +528,12 @@ public class Semantico implements Constants
                         }
                         else if (stackOperator.peek() == OperatorType.SUB.getCode()) {
                             STRB_Assembly_INSTRUCTION.append("SUBI " + token.getLexeme() + "\n");
+                        } else if(stackOperator.peek() == OperatorType.REL.getCode()){
+                            STRB_Assembly_INSTRUCTION.append("STO temp1\n");
+                            STRB_Assembly_INSTRUCTION.append("LDI "+ currentName + "\n");
+                            STRB_Assembly_INSTRUCTION.append("STO temp2\n");
+                            STRB_Assembly_INSTRUCTION.append("LD temp1\n");
+                            STRB_Assembly_INSTRUCTION.append("SUB temp2\n");
                         }
                         int currentEXPPos = expressionPosition.pop();
                         expressionPosition.push(currentEXPPos + 1);
@@ -583,17 +604,16 @@ public class Semantico implements Constants
                 stackOperator.push(OperatorType.MOD.getCode());
                 break;
             }
-            case 41,42,43,44,45,46,47,49:{
+            case 41,42,43,44,45,46,47,49: {
                 System.out.println("Validando valores nas stacks");
                 int tipo2 = stackType.pop();
                 int tipo1 = stackType.pop();
                 int op = stackOperator.pop();
 
-                int resultadoEXP = SemanticTable.resultType(tipo1,tipo2,op);
-                if(resultadoEXP == ReturnType.ERR.getCode()){
+                int resultadoEXP = SemanticTable.resultType(tipo1, tipo2, op);
+                if (resultadoEXP == ReturnType.ERR.getCode()) {
                     throw new SemanticError("Retorno da expresão inválida");
                 }
-                System.out.println(resultadoEXP);
                 stackType.push(resultadoEXP);
                 break;
 
@@ -716,20 +736,36 @@ public class Semantico implements Constants
                         STRB_Assembly_INSTRUCTION.append("STO temp3\n");
                         STRB_Assembly_INSTRUCTION.append("LD temp2\n");
                         int operation = stackOperator.peek();
-                        if (operation == OperatorType.SUM.getCode()) {
-                            STRB_Assembly_INSTRUCTION.append("ADD temp3\n");
-                        } else if (operation == OperatorType.SUB.getCode()) {
-                            STRB_Assembly_INSTRUCTION.append("SUB temp3\n");
+
+                        OperatorType opEnum = OperatorType.values()[operation];
+
+                        switch(opEnum) {
+                            case SUM:{
+                                STRB_Assembly_INSTRUCTION.append("ADD temp3\n");
+                                break;
+                            }
+                            case SUB:{
+                                STRB_Assembly_INSTRUCTION.append("SUB temp3\n");
+                                break;
+                            }
                         }
 
                     }else {
                         STRB_Assembly_INSTRUCTION.append("STO temp2\n");
                         STRB_Assembly_INSTRUCTION.append("LD temp1\n");
                         int operation = stackOperator.peek();
-                        if (operation == OperatorType.SUM.getCode()) {
-                            STRB_Assembly_INSTRUCTION.append("ADD temp2\n");
-                        } else if (operation == OperatorType.SUB.getCode()) {
-                            STRB_Assembly_INSTRUCTION.append("SUB temp2\n");
+
+                        OperatorType opEnum = OperatorType.values()[operation];
+
+                        switch(opEnum) {
+                            case SUM:{
+                                STRB_Assembly_INSTRUCTION.append("ADD temp2\n");
+                                break;
+                            }
+                            case SUB:{
+                                STRB_Assembly_INSTRUCTION.append("SUB temp2\n");
+                                break;
+                            }
                         }
                     }
                 }
@@ -778,7 +814,28 @@ public class Semantico implements Constants
                 break;
             }
 
+            case 61:{
+                String label = "L_IF_" + String.valueOf(lastScope);
+                stackLabel.push(label);
 
+                this.writeConditionalBranchAssembly(lastBooleanOperator,label);
+                break;
+            }
+
+            case 62:{
+                String label = stackLabel.pop();
+                STRB_Assembly_INSTRUCTION.append(label+":\n");
+                break;
+            }
+
+            case 63:{
+                String labelIF = stackLabel.pop();
+                String labelFIM = "L_ELSE_" + String.valueOf(lastScope);
+                STRB_Assembly_INSTRUCTION.append("JMP " + labelFIM+"\n");
+                stackLabel.push(labelFIM);
+                STRB_Assembly_INSTRUCTION.append(labelIF+":\n");
+                break;
+            }
 
             default:
                 System.out.println("Acao #"+action+", Token: "+token);
@@ -810,7 +867,41 @@ public class Semantico implements Constants
             }
         }
 
+        // DEVIDO A UM BUG DO BIPIDE, É NECESSÁRIO NÃO TER RÓTULOS VAZIOS, LOGO INSERIREI UM HLT NO FINAL DO ASSEMBLY
+        STRB_Assembly_INSTRUCTION.append("HLT");
         //Gerando vetores
         return STRB_Assembly_DATA.toString() + STRB_Assembly_INSTRUCTION.toString();
+    }
+
+    private void writeConditionalBranchAssembly(String lastBooleanOperator, String label) throws SemanticError{
+        switch (lastBooleanOperator){
+            case "<":{
+                STRB_Assembly_INSTRUCTION.append("BGE "+label+"\n");
+                break;
+            }
+            case ">":{
+                STRB_Assembly_INSTRUCTION.append("BLE "+label+"\n");
+                break;
+            }
+            case "==":{
+                STRB_Assembly_INSTRUCTION.append("BNE "+label+"\n");
+                break;
+            }
+            case "!=":{
+                STRB_Assembly_INSTRUCTION.append("BEQ "+label+"\n");
+                break;
+            }
+            case "<=":{
+                STRB_Assembly_INSTRUCTION.append("BGT "+label+"\n");
+                break;
+            }
+            case ">=":{
+                STRB_Assembly_INSTRUCTION.append("BLT "+label+"\n");
+                break;
+            }
+            default:{
+                throw new SemanticError("OPERADOR RELACIONAL NÃO IDENTIFICADO");
+            }
+        }
     }
 }
