@@ -43,6 +43,8 @@ public class Semantico implements Constants
 
     private String lastBooleanOperator;
     private String AssemblyVariableINC;
+    private int assemblyInstructionLength;
+    private String incrementAssemblyInstructions;
     public ArrayList<ReferencePointer> getReferences(){
         return references;
     }
@@ -137,6 +139,7 @@ public class Semantico implements Constants
                 isAtribToVector = false;
                 TempVectorReference = null;
                 AssemblyVariableINC = null;
+                assemblyInstructionLength = 0;
 
                 break;
 
@@ -163,6 +166,7 @@ public class Semantico implements Constants
                 TempVectorReference = null;
                 lastBooleanOperator = null;
                 AssemblyVariableINC = null;
+                assemblyInstructionLength = 0;
                 break;
 
             case 6:
@@ -295,6 +299,7 @@ public class Semantico implements Constants
 
             case 17: {
                 System.out.println("Adicionando todos os identificadores na tabela de referência");
+
                 for(TemporaryReference identifier : tempIdentifiers) {
                     ReferencePointer reference = new ReferencePointer(identifier.getNome(), currentVarType, false, false, stackScope.peek(), false, 0, identifier.isVector(), false, false);
 
@@ -726,14 +731,6 @@ public class Semantico implements Constants
                 //ReferencePointer.PrintListaDeReferencia(references);
                 break;
             }
-            case 54:{
-                System.out.println("Incrementar scopo das vars");
-                for(ReferencePointer reference : currentReferences){
-                    System.out.println("Incrementando Scopo "+ reference.getNome());
-                    reference.setEscopo(reference.getEscopo()+1);
-                }
-                break;
-            }
             case 55:{
                 STRB_Assembly_INSTRUCTION.append("STO temp1\n");
                 expressionPosition.push(0);
@@ -826,6 +823,9 @@ public class Semantico implements Constants
 
             case 61:{
                 String label = "L_IF_" + String.valueOf(lastScope);
+
+                System.out.println("Gerando rótulo "+label);
+
                 stackLabel.push(label);
 
                 this.writeConditionalBranchAssembly(lastBooleanOperator,label);
@@ -835,13 +835,17 @@ public class Semantico implements Constants
             case 62:{
                 String label = stackLabel.pop();
                 STRB_Assembly_INSTRUCTION.append(label+":\n");
+                System.out.println("Escrevendo rótulo "+label);
+
                 break;
             }
 
             case 63:{
                 String labelIF = stackLabel.pop();
                 String labelFIM = "L_ELSE_" + String.valueOf(lastScope);
+                System.out.println("Gerando rótulo "+labelFIM);
                 STRB_Assembly_INSTRUCTION.append("JMP " + labelFIM+"\n");
+                System.out.println("Gerando jump do rótulo "+labelFIM);
                 stackLabel.push(labelFIM);
                 STRB_Assembly_INSTRUCTION.append(labelIF+":\n");
                 break;
@@ -850,6 +854,7 @@ public class Semantico implements Constants
             case 64:{
 
                 String label = "L_WHILE_START_EXP_" + String.valueOf(lastScope);
+                System.out.println("Gerando rótulo "+label);
                 stackLabel.push(label);
                 STRB_Assembly_INSTRUCTION.append(label+":\n");
                 break;
@@ -858,6 +863,7 @@ public class Semantico implements Constants
             case 65:{
 
                 String label = "L_WHILE_END_SCOPE_" + String.valueOf(lastScope);
+                System.out.println("Gerando rótulo "+label);
                 stackLabel.push(label);
                 writeConditionalBranchAssembly(lastBooleanOperator,label);
                 break;
@@ -868,6 +874,7 @@ public class Semantico implements Constants
                 String labelScope = stackLabel.pop();
                 String labelEXP = stackLabel.pop();
 
+                System.out.println("Gerando Jump do rótulo "+labelEXP);
                 STRB_Assembly_INSTRUCTION.append("JMP "+ labelEXP +"\n");
                 STRB_Assembly_INSTRUCTION.append(labelScope+":\n");
 
@@ -878,6 +885,7 @@ public class Semantico implements Constants
             case 67:{
 
                 String label = "L_DO_WHILE_START_EXP_" + String.valueOf(lastScope);
+                System.out.println("Gerando rótulo "+label);
                 stackLabel.push(label);
                 STRB_Assembly_INSTRUCTION.append(label+":\n");
                 break;
@@ -891,10 +899,57 @@ public class Semantico implements Constants
             }
             case 69:{
                 expressionPosition = new Stack<>();
+
+                //Necessidade de diminuir o escopo não testada
+                String label = "L_FOR_START_EXP_" + String.valueOf(lastScope);
+                System.out.println("Gerando rótulo "+label);
+                stackLabel.push(label);
+                STRB_Assembly_INSTRUCTION.append(label+":\n");
+
                 break;
             }
             case 70:{
                 expressionPosition = new Stack<>();
+
+                String label = "L_FOR_END_INSTRUCTION_" + String.valueOf(lastScope);
+                System.out.println("Gerando rótulo "+label);
+                stackLabel.push(label);
+                writeConditionalBranchAssembly(lastBooleanOperator,label);
+
+                assemblyInstructionLength = STRB_Assembly_INSTRUCTION.length();
+                break;
+            }
+
+            case 71:{
+                expressionPosition = new Stack<>();
+                lastScope--;
+                stackScope.pop();
+
+                incrementAssemblyInstructions = STRB_Assembly_INSTRUCTION.substring(assemblyInstructionLength, STRB_Assembly_INSTRUCTION.length());
+                STRB_Assembly_INSTRUCTION.delete(assemblyInstructionLength, STRB_Assembly_INSTRUCTION.length());
+
+                break;
+            }
+
+            case 72:{
+                String labelEND = stackLabel.pop();
+                String labelEXP = stackLabel.pop();
+
+                STRB_Assembly_INSTRUCTION.append(incrementAssemblyInstructions);
+                incrementAssemblyInstructions = null;
+
+                STRB_Assembly_INSTRUCTION.append("JMP "+labelEXP+"\n");
+                STRB_Assembly_INSTRUCTION.append(labelEND+":\n");
+
+                break;
+            }
+
+            case 73:{
+                System.out.println("Incrementando escopo para FOR");
+
+                lastScope++;
+                stackScope.push(lastScope);
+
                 break;
             }
             default:
@@ -934,6 +989,7 @@ public class Semantico implements Constants
     }
 
     private void writeConditionalBranchAssembly(String lastBooleanOperator, String label) throws SemanticError{
+        System.out.println("Gerando breach do rótulo "+label);
         switch (lastBooleanOperator){
             case "<":{
                 STRB_Assembly_INSTRUCTION.append("BGE "+label+"\n");
