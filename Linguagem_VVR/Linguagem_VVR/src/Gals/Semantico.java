@@ -44,7 +44,7 @@ public class Semantico implements Constants
     private String lastBooleanOperator;
     private String AssemblyVariableINC;
     private int assemblyInstructionLength;
-    private String incrementAssemblyInstructions;
+    private Stack<String> incrementAssemblyInstructions = new Stack<>();
     public ArrayList<ReferencePointer> getReferences(){
         return references;
     }
@@ -925,7 +925,7 @@ public class Semantico implements Constants
                 lastScope--;
                 stackScope.pop();
 
-                incrementAssemblyInstructions = STRB_Assembly_INSTRUCTION.substring(assemblyInstructionLength, STRB_Assembly_INSTRUCTION.length());
+                incrementAssemblyInstructions.push(STRB_Assembly_INSTRUCTION.substring(assemblyInstructionLength, STRB_Assembly_INSTRUCTION.length()));
                 STRB_Assembly_INSTRUCTION.delete(assemblyInstructionLength, STRB_Assembly_INSTRUCTION.length());
 
                 break;
@@ -934,9 +934,8 @@ public class Semantico implements Constants
             case 72:{
                 String labelEND = stackLabel.pop();
                 String labelEXP = stackLabel.pop();
-
-                STRB_Assembly_INSTRUCTION.append(incrementAssemblyInstructions);
-                incrementAssemblyInstructions = null;
+                System.out.println(incrementAssemblyInstructions.size());
+                STRB_Assembly_INSTRUCTION.append(incrementAssemblyInstructions.pop());
 
                 STRB_Assembly_INSTRUCTION.append("JMP "+labelEXP+"\n");
                 STRB_Assembly_INSTRUCTION.append(labelEND+":\n");
